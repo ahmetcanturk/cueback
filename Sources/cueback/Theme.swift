@@ -29,7 +29,7 @@ struct Theme: Codable {
       "volume": 70,
       "enabled": ["permission", "waiting", "input", "done", "error"],
       "cues": {
-        "permission":     [{"tap": 0.35}, {"wait": 110}, {"tap": 0.65}, {"wait": 110}, {"tap": 1.0}],
+        "permission":     [{"tap": 0.6}, {"wait": 40}, {"tap": 0.8}, {"wait": 40}, {"tap": 1.0}],
         "waiting":        [{"tap": 0.45}, {"wait": 140}, {"tap": 0.45}],
         "input":          [{"tap": 0.5}, {"wait": 120}, {"tap": 0.8}],
         "done":           [{"note": "E6", "ms": 90, "level": 0.75}, {"wait": 20}, {"note": "A6", "ms": 170, "level": 0.9}],
