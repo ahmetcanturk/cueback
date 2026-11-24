@@ -36,6 +36,11 @@ readable only by you; a LaunchAgent starts it at login and brings it back if it 
 `cueback hook` with `"async": true`: it reads the event, sends the cue's name and exits. It never prints, never
 fails and never makes Claude wait.
 
+The daemon also puts a bell in the menu bar (`--headless` leaves it out). Its panel turns the cues on and off,
+sets the volume (one tap plays at the new level when you let go), sets quiet hours, when the cues from Claude
+Code stay silent, plays any cue or the demo, and shows the last cue. Quit stops cueback until the next login. The
+panel's settings are kept in `~/Library/Application Support/cueback/config.json`.
+
 A theme is a JSON file of cues, each a list of steps: `{"tap": 0.6}`, `{"note": "A6", "ms": 120, "level": 0.8}`,
 `{"hz": 165, "ms": 200}` or `{"wait": 100}`. The default theme is in [Theme.swift](Sources/cueback/Theme.swift).
 
@@ -67,7 +72,7 @@ minute, and the motor is never driven past its normal maximum. The daemon logs a
 
 ## Roadmap
 
-- Menu bar app: theme picker, a test button for each cue, volume, quiet hours
+- A theme picker in the menu bar
 - Permission nudges that grow stronger while a request waits
 - Original themes, including an RTS-style one (no copied game sounds)
 - Signed and notarized builds

@@ -23,10 +23,9 @@ final class Player {
         self.theme = theme
     }
 
-    /// Queues a cue by name: nil when it will play, or why it won't. A preview plays even when cueback or the cue
-    /// is off. A cue from inside a subagent plays at the theme's `subagentLevel`.
-    func request(_ cue: String, preview: Bool = false, fromSubagent: Bool = false) -> String? {
-        guard preview || !Switch.isOff else { return "cueback is off" }
+    /// Queues a cue by name at `volume` (0…100): nil when it will play, or why it won't. A preview plays even a cue
+    /// the theme leaves off. A cue from inside a subagent plays at the theme's `subagentLevel`.
+    func request(_ cue: String, preview: Bool = false, fromSubagent: Bool = false, volume: Double = 100) -> String? {
         guard preview || theme.enabled.contains(cue) else { return "off in this theme" }
         guard let steps = theme.cues[cue], !steps.isEmpty else { return "not in this theme" }
         let scale = fromSubagent ? min(1, max(0, theme.subagentLevel ?? 0.6)) : 1
@@ -39,6 +38,7 @@ final class Player {
         recent.append(now)
         queued += 1
         queue.async {
+            self.motor.volume = Float(min(100, max(0, volume)) / 100)
             self.perform(steps, scale: scale)
             self.lock.lock()
             self.queued -= 1
@@ -74,16 +74,15 @@ final class Player {
 
 private var socketPathForCleanup: UnsafeMutablePointer<CChar>?
 
-/// Keeps the motor open and plays the cues that `cueback hook` and `cueback play` send. Runs until stopped.
-func runDaemon(themePath: String?, volume: Double?, external: Bool) -> Never {
+/// Opens the motor and the socket, then plays what `cueback hook`, `cueback play` and the menu bar ask for. Shows
+/// the menu bar icon unless `headless`. Runs until stopped.
+func runDaemon(themePath: String?, volume: Double?, external: Bool, headless: Bool) -> Never {
     if Socket.isServing() { fail("cueback is already running.") }
     let theme: Theme
     do { theme = try Theme.load(path: themePath) } catch { fail("Couldn't read the theme: \(error)") }
     let motor: Motor
     do { motor = try Motor(external: external) } catch { fail("\(error)") }
-    let level = min(100, max(0, volume ?? theme.volume ?? 100))
-    motor.volume = Float(level / 100)
-    let player = Player(motor: motor, theme: theme)
+    let engine = Engine(player: Player(motor: motor, theme: theme), theme: theme, cliVolume: volume)
 
     let listener: Int32
     do { listener = try Socket.listen() } catch { fail("\(error)") }
@@ -97,23 +96,21 @@ func runDaemon(themePath: String?, volume: Double?, external: Bool) -> Never {
     signal(SIGHUP, cleanup)
 
     let state = Switch.isOff ? " · OFF until `cueback on`" : ""
-    logLine("ready · theme \(theme.name) · volume \(Int(level)) · on: \(theme.enabled.joined(separator: ", "))\(state)")
+    let enabled = theme.enabled.joined(separator: ", ")
+    logLine("ready · theme \(theme.name) · volume \(Int(engine.volume)) · on: \(enabled)\(state)\(headless ? "" : " · menu bar")")
+    if headless { serve(listener, engine) }
+    Thread { serve(listener, engine) }.start()
+    runMenuBar(engine)
+}
+
+/// Answers cue requests on the socket, one at a time.
+private func serve(_ listener: Int32, _ engine: Engine) -> Never {
     while true {
         let client = accept(listener, nil, nil)
         guard client >= 0 else { continue }
         let message = Socket.readMessage(client)
         close(client)
         guard let message, !message.isEmpty, message.count <= 64 else { continue }
-        // A message is a cue's name after optional flags: "play" (a preview from `cueback play`) and "sub" (sent
-        // from inside a subagent, so it plays quieter). Hooks send the bare name, or "sub <cue>".
-        var words = message.split(separator: " ").map(String.init)
-        let cue = words.removeLast()
-        let preview = words.contains("play"), fromSubagent = words.contains("sub")
-        let label = cue + (preview ? " (preview)" : "") + (fromSubagent ? " (subagent)" : "")
-        if let reason = player.request(cue, preview: preview, fromSubagent: fromSubagent) {
-            logLine("\(label) · skipped: \(reason)")
-        } else {
-            logLine(label)
-        }
+        engine.handle(message)
     }
 }

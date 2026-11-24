@@ -44,7 +44,8 @@ struct Theme: Codable {
         "session-start":  [{"note": "A5", "ms": 80, "level": 0.6}, {"note": "E6", "ms": 140, "level": 0.7}],
         "session-end":    [{"note": "E6", "ms": 80, "level": 0.6}, {"note": "A5", "ms": 140, "level": 0.6}],
         "installed":      [{"tap": 0.5}, {"wait": 120}, {"tap": 0.7}, {"wait": 160}, {"note": "E6", "ms": 80, "level": 0.7}, {"note": "A6", "ms": 80, "level": 0.8}, {"note": "E7", "ms": 220, "level": 0.9}],
-        "fanfare":        [{"note": "A5", "ms": 80, "level": 0.7}, {"note": "C#6", "ms": 80, "level": 0.75}, {"note": "E6", "ms": 80, "level": 0.8}, {"note": "A6", "ms": 260, "level": 0.95}]
+        "fanfare":        [{"note": "A5", "ms": 80, "level": 0.7}, {"note": "C#6", "ms": 80, "level": 0.75}, {"note": "E6", "ms": 80, "level": 0.8}, {"note": "A6", "ms": 260, "level": 0.95}],
+        "level":          [{"tap": 0.9}]
       }
     }
     """
@@ -66,6 +67,7 @@ let cueEvents: [(cue: String, event: String)] = [
     ("session-end", "SessionEnd: the session ended"),
     ("installed", "plays once, when cueback is installed"),
     ("fanfare", "the end of `cueback demo`"),
+    ("level", "one tap at the new volume, when you set it in the menu bar"),
 ]
 
 func printCues() {

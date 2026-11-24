@@ -15,10 +15,12 @@ error, Claude waiting for the user, subagents starting and stopping. Its program
 | see the demo ("demo çalıştır") | `~/.local/bin/cueback demo` |
 | check it ("durum") | `~/.local/bin/cueback status` |
 | hear one cue ("done'ı çal") | `~/.local/bin/cueback play <cue>`; `~/.local/bin/cueback cues` lists them |
-| restart it ("yeniden başlat") | `launchctl kickstart -k gui/$(id -u)/app.cueback.daemon` |
+| restart it, or bring it back after Quit ("yeniden başlat") | `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/app.cueback.daemon.plist 2>/dev/null; launchctl kickstart -k gui/$(id -u)/app.cueback.daemon` |
 
 `off` only silences the cues that come from Claude Code: the background service keeps running, and `play` and
-`demo` still work. Confirm what you did in one short sentence, in the user's language.
+`demo` still work. The bell in the menu bar opens a panel with the same switch, the volume, quiet hours and a
+button for each cue; its Quit stops cueback until the next login or a restart. Confirm what you did in one short
+sentence, in the user's language.
 
 Remove cueback only when the user asks for that: run `~/.local/bin/cueback uninstall-hooks`, then
 `launchctl bootout gui/$(id -u)/app.cueback.daemon`, and delete `~/Library/LaunchAgents/app.cueback.daemon.plist`,

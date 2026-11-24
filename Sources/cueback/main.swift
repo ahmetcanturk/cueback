@@ -25,8 +25,9 @@ func flag(_ name: String) -> Bool {
 let usage = """
 cueback · haptic cues for Claude Code, played on your Mac's trackpad
 
-  cueback daemon         keep the trackpad's motor open and play cues as they come in
-      --volume 0-100     turn it down (the default theme plays at 50)
+  cueback daemon         keep the trackpad's motor open, play cues as they come in, show the menu bar icon
+      --headless         no menu bar icon
+      --volume 0-100     turn it down (the default theme plays at 50; the menu bar's volume wins)
       --theme file.json  use your own cues
       --external         play through an external Magic Trackpad
   cueback hook           for Claude Code hooks: reads the event on stdin, sends its cue
@@ -54,8 +55,9 @@ case "daemon":
     }
     let themePath = option("--theme")
     let external = flag("--external")
+    let headless = flag("--headless")
     if let unknown = args.first { fail("\"\(unknown)\" isn't an option for daemon.") }
-    runDaemon(themePath: themePath, volume: volume, external: external)
+    runDaemon(themePath: themePath, volume: volume, external: external, headless: headless)
 case "hook":
     runHook(dryRun: flag("--dry-run"))
 case "play":
