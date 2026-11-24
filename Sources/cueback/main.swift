@@ -31,7 +31,7 @@ cueback · haptic cues for Claude Code, played on your Mac's trackpad
       --external         play through an external Magic Trackpad
   cueback hook           for Claude Code hooks: reads the event on stdin, sends its cue
       --dry-run          print the cue instead of sending it
-  cueback play <cue>     play one cue now (needs the daemon)
+  cueback play <cue>     play one cue now, even one that's off (needs the daemon)
   cueback cues           list the cues and the events that trigger them
   cueback hooks-json     print the hooks block for ~/.claude/settings.json
 """
@@ -54,7 +54,7 @@ case "hook":
     runHook(dryRun: flag("--dry-run"))
 case "play":
     guard let cue = args.first else { fail("Which cue? See: cueback cues") }
-    if !Socket.send(cue) { fail("The daemon isn't running. Start it with: cueback daemon") }
+    if !Socket.send("play " + cue) { fail("The daemon isn't running. Start it with: cueback daemon") }
 case "cues":
     printCues()
 case "hooks-json":

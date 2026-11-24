@@ -23,9 +23,9 @@ final class Player {
         self.theme = theme
     }
 
-    /// Queues a cue by name: nil when it will play, or why it won't.
-    func request(_ cue: String) -> String? {
-        guard theme.enabled.contains(cue) else { return "off in this theme" }
+    /// Queues a cue by name: nil when it will play, or why it won't. A preview plays even a cue that's off.
+    func request(_ cue: String, preview: Bool = false) -> String? {
+        guard preview || theme.enabled.contains(cue) else { return "off in this theme" }
         guard let steps = theme.cues[cue], !steps.isEmpty else { return "not in this theme" }
         lock.lock()
         defer { lock.unlock() }
@@ -95,7 +95,11 @@ func runDaemon(themePath: String?, volume: Double?, external: Bool) -> Never {
         guard client >= 0 else { continue }
         let message = Socket.readMessage(client)
         close(client)
-        guard let cue = message, !cue.isEmpty, cue.count <= 64 else { continue }
-        if let reason = player.request(cue) { logLine("\(cue) · skipped: \(reason)") } else { logLine(cue) }
+        guard let message, !message.isEmpty, message.count <= 64 else { continue }
+        // `cueback play` asks for a preview ("play <cue>"), which plays even a cue that's off. Hooks send the bare name.
+        let preview = message.hasPrefix("play ")
+        let cue = preview ? String(message.dropFirst(5)) : message
+        let label = preview ? "\(cue) (preview)" : cue
+        if let reason = player.request(cue, preview: preview) { logLine("\(label) · skipped: \(reason)") } else { logLine(label) }
     }
 }

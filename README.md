@@ -41,7 +41,7 @@ A theme is a JSON file of cues, each a list of steps: `{"tap": 0.6}`, `{"note": 
 swift build -c release
 .build/release/cueback cues                # the cues and their events (silent)
 .build/release/cueback daemon              # keeps running; plays through the trackpad
-.build/release/cueback play permission     # in another terminal
+.build/release/cueback play permission     # in another terminal; plays any cue, even one that's off
 .build/release/cueback hooks-json          # the hooks block to add to ~/.claude/settings.json
 ```
 
