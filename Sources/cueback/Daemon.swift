@@ -23,10 +23,13 @@ final class Player {
         self.theme = theme
     }
 
-    /// Queues a cue by name: nil when it will play, or why it won't. A preview plays even a cue that's off.
-    func request(_ cue: String, preview: Bool = false) -> String? {
+    /// Queues a cue by name: nil when it will play, or why it won't. A preview plays even when cueback or the cue
+    /// is off. A cue from inside a subagent plays at the theme's `subagentLevel`.
+    func request(_ cue: String, preview: Bool = false, fromSubagent: Bool = false) -> String? {
+        guard preview || !Switch.isOff else { return "cueback is off" }
         guard preview || theme.enabled.contains(cue) else { return "off in this theme" }
         guard let steps = theme.cues[cue], !steps.isEmpty else { return "not in this theme" }
+        let scale = fromSubagent ? min(1, max(0, theme.subagentLevel ?? 0.6)) : 1
         lock.lock()
         defer { lock.unlock() }
         let now = Date()
@@ -36,7 +39,7 @@ final class Player {
         recent.append(now)
         queued += 1
         queue.async {
-            self.perform(steps)
+            self.perform(steps, scale: scale)
             self.lock.lock()
             self.queued -= 1
             self.lock.unlock()
@@ -44,22 +47,26 @@ final class Player {
         return nil
     }
 
-    private func perform(_ steps: [Step]) {
+    private func perform(_ steps: [Step], scale: Double) {
         let start = Clock.now()
         var t = 0.0
         for step in steps where t < Limits.maxCueSeconds {
             let left = Limits.maxCueSeconds - t
             if let strength = step.tap {
-                motor.tap(min(1, max(0, strength)))
+                motor.tap(min(1, max(0, strength)) * scale)
                 t += Motor.tapSeconds
             } else if let hz = step.hz ?? step.note.flatMap(frequency(ofNote:)) {
                 let seconds = min(max(0, step.ms ?? 120) / 1000, left)
-                motor.tone(hz, seconds: seconds, level: min(1, max(0, step.level ?? 0.8)))
+                motor.tone(hz, seconds: seconds, level: min(1, max(0, step.level ?? 0.8)) * scale)
                 t += seconds
             } else if let ms = step.wait {
                 t += min(max(0, ms) / 1000, left)
             }
             Clock.wait(until: Clock.after(t, from: start))
+        }
+        let counts = motor.takeCounts()
+        if counts.failures > 0 {
+            logLine("  the motor refused \(counts.failures) of \(counts.actuations) actuations (code \(counts.lastCode))")
         }
         usleep(useconds_t(Limits.gapSeconds * 1e6))
     }
@@ -89,17 +96,24 @@ func runDaemon(themePath: String?, volume: Double?, external: Bool) -> Never {
     signal(SIGTERM, cleanup)
     signal(SIGHUP, cleanup)
 
-    logLine("ready · theme \(theme.name) · volume \(Int(level)) · on: \(theme.enabled.joined(separator: ", "))")
+    let state = Switch.isOff ? " · OFF until `cueback on`" : ""
+    logLine("ready · theme \(theme.name) · volume \(Int(level)) · on: \(theme.enabled.joined(separator: ", "))\(state)")
     while true {
         let client = accept(listener, nil, nil)
         guard client >= 0 else { continue }
         let message = Socket.readMessage(client)
         close(client)
         guard let message, !message.isEmpty, message.count <= 64 else { continue }
-        // `cueback play` asks for a preview ("play <cue>"), which plays even a cue that's off. Hooks send the bare name.
-        let preview = message.hasPrefix("play ")
-        let cue = preview ? String(message.dropFirst(5)) : message
-        let label = preview ? "\(cue) (preview)" : cue
-        if let reason = player.request(cue, preview: preview) { logLine("\(label) · skipped: \(reason)") } else { logLine(label) }
+        // A message is a cue's name after optional flags: "play" (a preview from `cueback play`) and "sub" (sent
+        // from inside a subagent, so it plays quieter). Hooks send the bare name, or "sub <cue>".
+        var words = message.split(separator: " ").map(String.init)
+        let cue = words.removeLast()
+        let preview = words.contains("play"), fromSubagent = words.contains("sub")
+        let label = cue + (preview ? " (preview)" : "") + (fromSubagent ? " (subagent)" : "")
+        if let reason = player.request(cue, preview: preview, fromSubagent: fromSubagent) {
+            logLine("\(label) · skipped: \(reason)")
+        } else {
+            logLine(label)
+        }
     }
 }

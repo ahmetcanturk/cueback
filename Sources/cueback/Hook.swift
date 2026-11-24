@@ -46,15 +46,18 @@ private func hasValue(_ value: Any?) -> Bool {
 }
 
 /// For Claude Code hooks: reads the event from stdin, sends its cue to the daemon and exits. It never prints,
-/// never fails and never waits, so it can't get in Claude's way. With `dryRun` it prints the cue instead.
+/// never fails and never waits, so it can't get in Claude's way. With `dryRun` it prints what it would send.
 func runHook(dryRun: Bool) -> Never {
     let data = FileHandle.standardInput.readDataToEndOfFile()
     let input = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
-    let cue = cueName(for: input)
+    // Cues from inside a subagent play quieter ("sub <cue>"); the subagents' own start and stop cues are soft already.
+    let message = cueName(for: input).map { cue in
+        hasValue(input["agent_id"]) && !cue.hasPrefix("subagent-") ? "sub " + cue : cue
+    }
     if dryRun {
-        print(cue ?? "-")
-    } else if let cue {
-        Socket.send(cue)
+        print(message ?? "-")
+    } else if let message {
+        Socket.send(message)
     }
     exit(0)
 }

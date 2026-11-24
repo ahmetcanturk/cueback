@@ -1,7 +1,7 @@
 # Third-party notices
 
 cueback adapts code from **nospeaker** (https://github.com/os6/nospeaker): the MultitouchSupport motor access
-in `Sources/cueback/Haptics.swift` and the felt tap. Its license:
+and the actuation format in `Sources/cueback/Haptics.swift`. Its license:
 
 ```text
 MIT License

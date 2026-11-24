@@ -1,7 +1,7 @@
 // The trackpad's haptic motor, and the two sounds every cue is built from: a felt tap and a tone.
 //
-// Motor access and the tap are adapted from nospeaker (https://github.com/os6/nospeaker),
-// MIT License, Copyright (c) 2026 Cody Collier. See THIRD_PARTY_NOTICES.md.
+// Motor access is adapted from nospeaker (https://github.com/os6/nospeaker), MIT License, Copyright (c) 2026
+// Cody Collier. See THIRD_PARTY_NOTICES.md.
 //
 // MultitouchSupport is a private macOS framework: undocumented, and a macOS update can change it.
 
@@ -59,11 +59,22 @@ final class Motor {
     private typealias ActuationCreate = @convention(c) (CFDictionary, Int32) -> UnsafeMutableRawPointer?
     private typealias ActuationPlay = @convention(c) (UnsafeMutableRawPointer, UnsafeMutableRawPointer, UInt32, Float, Float) -> Int32
 
-    /// How long `tap` lasts.
-    static let tapSeconds = 0.11
+    /// The driver refuses a command that arrives while the last one still plays (0xE00002BC, the same error as in
+    /// nospeaker#15). So commands never overlap, a little quiet follows each, and a cue sends a handful of them
+    /// rather than dozens: a tap is one command, a tone one per ~40 ms.
+    static let tapMilliseconds = 28.0
+    static let guardSeconds = 0.002
+    static var tapSeconds: Double { tapMilliseconds / 1000 + guardSeconds }
 
-    /// 0…1, scales every actuation. It only ever turns the motor down, never past its normal maximum.
+    /// 0…1, scales every command. It only ever turns the motor down, never past its normal maximum.
     var volume: Float = 1
+
+    /// Commands since the last `takeCounts()`, and how many of them the motor refused.
+    private var actuations = 0
+    private var failures = 0
+    private var lastFailureCode: Int32 = 0
+    /// When the last command (and the quiet after it) ends.
+    private var busyUntil: UInt64 = 0
 
     private let actuator: CFTypeRef
     private let pointer: UnsafeMutableRawPointer
@@ -114,8 +125,8 @@ final class Motor {
 
     deinit { _ = closeActuator?(actuator) }
 
-    /// One actuation: tones (Hz, relative strength) played together for `ms`, at `level` (0…1). Strengths are
-    /// scaled to add up to 1: past that is louder, but the driver starts stalling.
+    /// One command: tones (Hz, relative strength) played together for `ms`, at `level` (0…1). Strengths are scaled
+    /// to add up to 1: past that is louder, but the driver starts stalling. Waits until the last command is done.
     func play(_ tones: [(hz: Double, amp: Double)], ms: Double, level: Double) {
         guard !tones.isEmpty, ms > 0 else { return }
         let sum = max(tones.reduce(0) { $0 + $1.amp }, 0.0001)
@@ -123,38 +134,35 @@ final class Motor {
             "BaseWaveform": ["Type": "Gaussian", "Amplitude": 0.0, "DurationMS": ms],
             "Tones": tones.map { ["Type": "Sine", "Amplitude": $0.amp / sum, "DurationMS": ms, "DelayMS": 0.0, "FrequencykHz": $0.hz / 1000] },
         ]
-        guard let actuation = createActuation(shape as CFDictionary, 0) else { return }
-        _ = actuate(actuation, pointer, 0, Float(min(1, max(0, level))) * volume, 0)
+        Clock.wait(until: busyUntil)
+        actuations += 1
+        guard let actuation = createActuation(shape as CFDictionary, 0) else { failures += 1; return }
+        let code = actuate(actuation, pointer, 0, Float(min(1, max(0, level))) * volume, 0)
         Unmanaged<AnyObject>.fromOpaque(actuation).release()
+        busyUntil = Clock.after(ms / 1000 + Motor.guardSeconds, from: Clock.now())
+        if code != 0 { failures += 1; lastFailureCode = code }
     }
 
-    /// A felt tap: a fast pitch dive you feel more than hear (nospeaker's heartbeat thump). `strength` 0…1.
+    /// The command counts since the last call, then starts counting again.
+    func takeCounts() -> (actuations: Int, failures: Int, lastCode: Int32) {
+        defer { actuations = 0; failures = 0; lastFailureCode = 0 }
+        return (actuations, failures, lastFailureCode)
+    }
+
+    /// A felt tap in one command: a low thump with a little edge on top. `strength` 0…1.
     func tap(_ strength: Double) {
-        let start = Clock.now()
-        var t = 0.0
-        while t < Motor.tapSeconds {
-            let f = 120 + 780 * exp(-t / 0.02)
-            let segment = 1 / f
-            play([(f, 1)], ms: segment * 1000, level: strength * exp(-t / 0.05))
-            t += segment
-            Clock.wait(until: Clock.after(t, from: start))
-        }
+        play([(160, 0.8), (640, 0.2)], ms: Motor.tapMilliseconds, level: strength)
     }
 
-    /// A tone that fades in and out, so it starts and stops without a click. 80 Hz to 4 kHz: the motor's range.
+    /// A tone in commands of about 40 ms, the first and last a little softer so it starts and ends without a click.
+    /// 80 Hz to 4 kHz: the motor's range.
     func tone(_ hz: Double, seconds: Double, level: Double) {
         let f = min(4000, max(80, hz))
-        let segment = max(1, (0.01 * f).rounded()) / f
-        let start = Clock.now()
-        var t = 0.0
-        while t < seconds {
-            let length = min(segment, seconds - t)
-            let middle = t + length / 2
-            let fadeIn = min(1, middle / 0.012)
-            let fadeOut = min(1, max(0, (seconds - middle) / max(0.001, 0.35 * seconds)))
-            play([(f, 1)], ms: length * 1000, level: level * fadeIn * fadeOut)
-            t += length
-            Clock.wait(until: Clock.after(t, from: start))
+        let pieces = max(1, Int((seconds / 0.04).rounded()))
+        let length = seconds / Double(pieces)
+        for i in 0..<pieces {
+            let edge: Double = pieces == 1 ? 1 : (i == 0 ? 0.8 : (i == pieces - 1 ? 0.75 : 1))
+            play([(f, 1)], ms: max(1, (length - Motor.guardSeconds) * 1000), level: level * edge)
         }
     }
 }

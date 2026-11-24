@@ -14,6 +14,7 @@ struct Step: Codable {
 struct Theme: Codable {
     var name: String
     var volume: Double?   // 0…100 (default 100)
+    var subagentLevel: Double?   // cues from inside a subagent play at this share of their strength (default 0.6)
     var enabled: [String]
     var cues: [String: [Step]]
 
@@ -22,25 +23,28 @@ struct Theme: Codable {
         return try JSONDecoder().decode(Theme.self, from: data)
     }
 
-    /// The default theme: short, quiet, and only the five cues that need you are on.
+    /// The default theme: short and quiet. The cues that need you are on, and so are the subagents' soft ticks.
     static let builtIn = """
     {
       "name": "Default",
-      "volume": 70,
-      "enabled": ["permission", "waiting", "input", "done", "error"],
+      "volume": 50,
+      "subagentLevel": 0.6,
+      "enabled": ["permission", "waiting", "input", "done", "error", "subagent-start", "subagent-stop"],
       "cues": {
-        "permission":     [{"tap": 0.6}, {"wait": 40}, {"tap": 0.8}, {"wait": 40}, {"tap": 1.0}],
-        "waiting":        [{"tap": 0.45}, {"wait": 140}, {"tap": 0.45}],
-        "input":          [{"tap": 0.5}, {"wait": 120}, {"tap": 0.8}],
+        "permission":     [{"tap": 0.6}, {"wait": 120}, {"tap": 0.8}, {"wait": 120}, {"tap": 1.0}],
+        "waiting":        [{"tap": 0.45}, {"wait": 220}, {"tap": 0.45}],
+        "input":          [{"tap": 0.5}, {"wait": 200}, {"tap": 0.8}],
         "done":           [{"note": "E6", "ms": 90, "level": 0.75}, {"wait": 20}, {"note": "A6", "ms": 170, "level": 0.9}],
-        "error":          [{"tap": 0.8}, {"wait": 60}, {"hz": 165, "ms": 200, "level": 0.85}],
+        "error":          [{"tap": 0.8}, {"wait": 140}, {"hz": 165, "ms": 200, "level": 0.85}],
         "subagent-start": [{"tap": 0.3}],
-        "subagent-stop":  [{"tap": 0.3}, {"wait": 90}, {"tap": 0.3}],
+        "subagent-stop":  [{"tap": 0.3}, {"wait": 170}, {"tap": 0.3}],
         "task-done":      [{"note": "C7", "ms": 70, "level": 0.6}],
         "tool-failed":    [{"tap": 0.25}],
         "compact":        [{"note": "A5", "ms": 110, "level": 0.4}, {"note": "E6", "ms": 110, "level": 0.45}, {"note": "A6", "ms": 150, "level": 0.5}],
         "session-start":  [{"note": "A5", "ms": 80, "level": 0.6}, {"note": "E6", "ms": 140, "level": 0.7}],
-        "session-end":    [{"note": "E6", "ms": 80, "level": 0.6}, {"note": "A5", "ms": 140, "level": 0.6}]
+        "session-end":    [{"note": "E6", "ms": 80, "level": 0.6}, {"note": "A5", "ms": 140, "level": 0.6}],
+        "installed":      [{"tap": 0.5}, {"wait": 120}, {"tap": 0.7}, {"wait": 160}, {"note": "E6", "ms": 80, "level": 0.7}, {"note": "A6", "ms": 80, "level": 0.8}, {"note": "E7", "ms": 220, "level": 0.9}],
+        "fanfare":        [{"note": "A5", "ms": 80, "level": 0.7}, {"note": "C#6", "ms": 80, "level": 0.75}, {"note": "E6", "ms": 80, "level": 0.8}, {"note": "A6", "ms": 260, "level": 0.95}]
       }
     }
     """
@@ -60,6 +64,8 @@ let cueEvents: [(cue: String, event: String)] = [
     ("compact", "PreCompact: the conversation is about to be compacted"),
     ("session-start", "SessionStart (startup): a new session"),
     ("session-end", "SessionEnd: the session ended"),
+    ("installed", "plays once, when cueback is installed"),
+    ("fanfare", "the end of `cueback demo`"),
 ]
 
 func printCues() {

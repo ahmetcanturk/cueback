@@ -26,13 +26,19 @@ let usage = """
 cueback · haptic cues for Claude Code, played on your Mac's trackpad
 
   cueback daemon         keep the trackpad's motor open and play cues as they come in
-      --volume 0-100     turn it down (the default theme plays at 70)
+      --volume 0-100     turn it down (the default theme plays at 50)
       --theme file.json  use your own cues
       --external         play through an external Magic Trackpad
   cueback hook           for Claude Code hooks: reads the event on stdin, sends its cue
-      --dry-run          print the cue instead of sending it
+      --dry-run          print what it would send instead
   cueback play <cue>     play one cue now, even one that's off (needs the daemon)
+      --subagent         as if it came from inside a subagent (quieter)
+  cueback demo           a Claude Code session in fifteen seconds, on the trackpad
+  cueback off | on       silence the cues from Claude Code, or bring them back
+  cueback status         on or off, and whether the daemon is running
   cueback cues           list the cues and the events that trigger them
+  cueback install-hooks  add cueback's hooks to ~/.claude/settings.json (keeps a backup)
+  cueback uninstall-hooks  take them out again
   cueback hooks-json     print the hooks block for ~/.claude/settings.json
 """
 
@@ -53,10 +59,25 @@ case "daemon":
 case "hook":
     runHook(dryRun: flag("--dry-run"))
 case "play":
+    let fromSubagent = flag("--subagent")
     guard let cue = args.first else { fail("Which cue? See: cueback cues") }
-    if !Socket.send("play " + cue) { fail("The daemon isn't running. Start it with: cueback daemon") }
+    if !Socket.send("play " + (fromSubagent ? "sub " : "") + cue) {
+        fail("The daemon isn't running. Start it with: cueback daemon")
+    }
+case "on", "off":
+    let on = command == "on"
+    do { try Switch.set(on: on) } catch { fail("Couldn't turn cueback \(on ? "on" : "off"): \(error)") }
+    print(on ? "cueback is on." : "cueback is off: cues from Claude Code stay silent until `cueback on`.")
+case "status":
+    print("cueback is \(Switch.isOff ? "off" : "on") · daemon \(Socket.isServing() ? "running" : "not running")")
+case "demo":
+    runDemo()
 case "cues":
     printCues()
+case "install-hooks":
+    installHooks()
+case "uninstall-hooks":
+    uninstallHooks()
 case "hooks-json":
     printHooksJSON()
 case nil, "help", "-h", "--help":
