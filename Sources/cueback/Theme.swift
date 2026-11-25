@@ -87,7 +87,7 @@ struct Theme: Codable {
         let key = text.lowercased()
         let everything = all()
         if let n = Int(key), everything.indices.contains(n - 1) { return everything[n - 1].id }
-        let nicknames = ["klasik": "classic", "warcraft": "warhorn", "wc": "warhorn", "minecraft": "blocky", "mc": "blocky",
+        let nicknames = ["warcraft": "warhorn", "wc": "warhorn", "minecraft": "blocky", "mc": "blocky",
                          "harrypotter": "owlpost", "potter": "owlpost", "hp": "owlpost", "hogwarts": "owlpost",
                          "starwars": "r2d2", "sw": "r2d2", "r2-d2": "r2d2", "r2": "r2d2", "droid": "r2d2", "astromech": "r2d2"]
         let id = nicknames[key] ?? key

@@ -15,7 +15,8 @@ been tried.
 > **Before you install.** cueback drives the trackpad's motor through MultitouchSupport, a private macOS
 > framework that Apple doesn't document. One person reported losing their trackpad's click feel after running
 > nospeaker, which uses the same framework. cueback asks far less of the motor (see [Safety](#safety)), but
-> nobody outside Apple knows the motor's limits. Use it at your own risk.
+> nobody outside Apple knows the motor's limits. Use it at your own risk; the [disclaimer](#disclaimer) says
+> what that means.
 
 ## Install
 
@@ -140,8 +141,23 @@ unzip it and run `sh install.sh`. The copy isn't signed by Apple.
 - A theme editor in the menu bar
 - Signed and notarized builds
 
+## Disclaimer
+
+cueback is an independent hobby project. It is provided as is, with no warranty of any kind.
+
+It drives your trackpad's haptic motor through a private, undocumented macOS framework. That may wear out,
+damage or disable the trackpad's haptics, and a macOS update may break cueback at any time. You use it entirely
+at your own risk: the author is not responsible for any damage to your hardware, your software or your data.
+
+cueback is not affiliated with, endorsed by or sponsored by Anthropic or Apple. Warhorn, Blocky, Owlpost and
+R2-D2 are fan homages made of sounds of their own. They are not affiliated with or endorsed by the owners of the
+games and films they nod to, and every name and trademark belongs to its owner.
+
 ## Credits
 
 Motor access and the speech analysis are adapted from nospeaker (MIT, Cody Collier); see
-[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). MultitouchSupport is a private macOS framework, so a macOS
-update can break this.
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+## License
+
+[MIT](LICENSE).

@@ -43,4 +43,5 @@ launchctl bootstrap "$domain" "$plist"
 i=0
 until "$bin" status | grep -q 'daemon running' || [ "$i" -ge 25 ]; do sleep 0.2; i=$((i + 1)); done
 if [ "$first" = 1 ]; then "$bin" play installed || true; fi
-echo "cueback is installed. Try it: tell Claude \"cueback demo çalıştır\", or run ~/.local/bin/cueback demo"
+echo "cueback is installed. Try it: ask Claude to run the cueback demo, or run ~/.local/bin/cueback demo"
+echo "It drives the trackpad's motor through a private macOS framework and comes with no warranty: you use it at your own risk."

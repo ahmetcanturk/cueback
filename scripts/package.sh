@@ -22,7 +22,7 @@ codesign -s - -f "$out/cueback" 2>/dev/null
 swift build -c release >/dev/null
 
 cp scripts/setup.sh "$out/install.sh"
-cp skill/SKILL.md THIRD_PARTY_NOTICES.md THEMES.md "$out/"
+cp skill/SKILL.md LICENSE THIRD_PARTY_NOTICES.md THEMES.md "$out/"
 mkdir -p "$out/examples" && cp examples/pebble.json "$out/examples/"
 cat > "$out/README.txt" <<'EOF'
 cueback · haptic cues for Claude Code, played on your Mac's trackpad
@@ -32,17 +32,21 @@ Needs macOS 13 or later and a Force Touch trackpad (a MacBook from 2015 on, or a
 
 Install: open Terminal in this folder and run   sh install.sh
          (or tell Claude: "run install.sh in this folder")
-You'll feel the "installed" cue. Then tell Claude: "cueback demo çalıştır" (run the cueback demo).
+You'll feel the "installed" cue. Then ask Claude to run the cueback demo.
 
 A bell in the menu bar opens its panel: turn the cues on or off, pick a theme (1 Classic, 2 Mochi, 3 Warhorn,
 4 Blocky, 5 Owlpost, 6 R2-D2), set the volume and quiet hours, try each cue, play the demo. Its Quit stops
-cueback until your next login. You can also tell Claude "tema 2" to switch themes.
+cueback until your next login. You can also ask Claude to switch cueback to another theme.
 
-Turn it off or on: tell Claude "cueback'i kapat" / "cueback'i aç", or run ~/.local/bin/cueback off / on.
-Remove it: tell Claude "cueback'i kaldır".
+Turn it off or on: ask Claude to turn cueback off or on, or run ~/.local/bin/cueback off / on.
+Remove it: ask Claude to remove cueback.
 
 It adds ~/.local/bin/cueback, a LaunchAgent (app.cueback.daemon), hooks in ~/.claude/settings.json (the old
 file is kept next to it as a backup) and a Claude skill in ~/.claude/skills/cueback.
+
+cueback drives the trackpad's motor through a private, undocumented macOS framework and comes with no warranty
+of any kind: you use it at your own risk. It is not affiliated with Anthropic or Apple. The full disclaimer is
+in the README at https://github.com/ahmetcanturk/cueback, and the license (MIT) is in the LICENSE file.
 EOF
 
 (cd dist && ditto -c -k --keepParent cueback cueback.zip)

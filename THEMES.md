@@ -41,7 +41,7 @@ R2-D2.
 - **Terminal:** `cueback theme` lists the themes and marks the one in use; `cueback theme 2` or
   `cueback theme mochi` switches. `warcraft`, `minecraft`, `potter` and `starwars` also work, for Warhorn,
   Blocky, Owlpost and R2-D2.
-- **Claude:** say "tema 2" or "mochi'ye geç" in any session.
+- **Claude:** in any session, ask it to switch cueback to theme 2, or to the Mochi theme.
 
 The new theme takes over at once and plays its `installed` cue, so you hear what you picked. Your choice is kept
 in `~/Library/Application Support/cueback/config.json`.
