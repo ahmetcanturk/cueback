@@ -1,12 +1,60 @@
 # cueback
 
-Haptic cues for Claude Code, played on your MacBook's trackpad. *cue + feedback.*
+**Your MacBook's trackpad tells you what Claude Code is doing.** *cue + feedback.*
 
-When Claude asks for permission, finishes, fails or is waiting for you, the trackpad taps or chimes, even with
-the sound off. There's no speaker in the trackpad: cueback drives its haptic motor, the way
-[nospeaker](https://github.com/os6/nospeaker) makes it talk.
+When Claude asks for permission, finishes, fails or has been waiting for you, the trackpad taps, chimes or even
+talks, with the Mac's sound off. There's no speaker in a trackpad: cueback drives its haptic motor, the trick
+[nospeaker](https://github.com/os6/nospeaker) uses to make it speak.
 
-> Private alpha. Needs macOS 13 or later and a Force Touch trackpad.
+<!-- The demo video goes here. -->
+
+It needs a MacBook with a Force Touch trackpad (2015 or later), macOS 13 or later and a recent Claude Code. So
+far it has run on one Mac: a MacBook Pro with an M1 Pro, on macOS 27. A Magic Trackpad 2 should work but hasn't
+been tried.
+
+> **Before you install.** cueback drives the trackpad's motor through MultitouchSupport, a private macOS
+> framework that Apple doesn't document. One person reported losing their trackpad's click feel after running
+> nospeaker, which uses the same framework. cueback asks far less of the motor (see [Safety](#safety)), but
+> nobody outside Apple knows the motor's limits. Use it at your own risk.
+
+## Install
+
+```sh
+git clone https://github.com/ahmetcanturk/cueback
+cd cueback
+scripts/install.sh
+```
+
+The script builds cueback, which takes about a minute and needs Apple's Command Line Tools
+(`xcode-select --install`). Then it:
+
+- puts the program in `~/.local/bin/cueback`
+- starts its background service, which also starts at login (a LaunchAgent, `app.cueback.daemon`)
+- adds its hooks to `~/.claude/settings.json`, next to yours, and keeps the old file as a backup
+- adds a Claude skill, so you can ask Claude to turn cueback off, switch its theme or run the demo
+
+You'll feel the `installed` cue, and a bell appears in the menu bar.
+
+To remove it, run `~/.local/bin/cueback uninstall-hooks` and
+`launchctl bootout gui/$(id -u)/app.cueback.daemon`, then delete
+`~/Library/LaunchAgents/app.cueback.daemon.plist`, `~/.local/bin/cueback` and `~/.claude/skills/cueback`.
+
+## Use
+
+**The menu bar.** Click the bell: turn the cues on or off, pick a theme, set the volume and quiet hours, try
+any cue, play the demo. Quit stops cueback until your next login.
+
+**The terminal.**
+
+```sh
+~/.local/bin/cueback demo                # a Claude Code session in fifteen seconds, on the trackpad
+~/.local/bin/cueback theme               # the themes; `cueback theme 2` switches
+~/.local/bin/cueback play permission     # any cue, even one that's off; --subagent plays it quieter
+~/.local/bin/cueback off                 # silence the cues from Claude Code; `on` brings them back
+~/.local/bin/cueback status              # on or off, and whether the service is running
+```
+
+**Claude.** In any session, ask it to turn cueback off, switch to another theme or run the demo.
 
 ## Cues
 
@@ -51,6 +99,24 @@ R2-D2 are sounds of their own: no game's or film's audio or music is in them.
 
 [THEMES.md](THEMES.md) has what each theme plays for each cue, and how to write a theme of your own.
 
+## Safety
+
+The motor is driven through a private framework, so what follows is what cueback does to stay gentle, not a
+promise that it's harmless.
+
+- **Few commands.** A tap is one command to the motor and a tone one per ~40 ms. The person who lost their
+  trackpad's click feel ([nospeaker#15](https://github.com/os6/nospeaker/issues/15)) had the driver refusing
+  thousands of commands (0xE00002BC) just before.
+- **No overlap.** A command is never sent while the last one still plays; that is what the driver refuses.
+- **Short and rare.** A cue is cut off at 1.2 s, 150 ms of quiet follows each one, and at most 30 play in a
+  minute.
+- **Never past normal.** The motor is never driven past its normal maximum; the volume only turns it down.
+- **It tells you.** The daemon writes any command the motor refuses to `~/Library/Logs/cueback.log`.
+
+Spoken lines (Warhorn's and Owlpost's) and hums and hisses (Blocky's) are the exceptions to "few commands": up
+to about seventy in under a second, one for each beat of the voice's pitch. They're kept short, and the motor
+has refused none of them.
+
 ## How it works
 
 `cueback daemon` opens the motor once and listens on a socket in `~/Library/Application Support/cueback/`,
@@ -58,43 +124,15 @@ readable only by you; a LaunchAgent starts it at login and brings it back if it 
 `cueback hook` with `"async": true`: it reads the event, sends the cue's name and exits. It never prints, never
 fails and never makes Claude wait.
 
-The daemon also puts a bell in the menu bar (`--headless` leaves it out). Its panel turns the cues on and off,
-picks the theme, sets the volume (one tap plays at the new level when you let go), sets quiet hours, when the
-cues from Claude Code stay silent, plays any cue or the demo, and shows the last cue. Quit stops cueback until
-the next login. The panel's settings are kept in `~/Library/Application Support/cueback/config.json`.
+The daemon also puts the bell in the menu bar (`--headless` leaves it out). The panel's settings are kept in
+`~/Library/Application Support/cueback/config.json`, and the log is `~/Library/Logs/cueback.log`.
 
-A theme is a JSON file of cues, each a list of steps: a tap, a note, a pause, a hum, a spoken line. Your own
-themes go in `~/Library/Application Support/cueback/themes/`; see [THEMES.md](THEMES.md).
+A theme is a JSON file of cues, each a list of steps: a tap, a note, a pause, a hum, a spoken line, a sound
+file of yours. Your own themes go in `~/Library/Application Support/cueback/themes/`; see
+[THEMES.md](THEMES.md).
 
-## Install
-
-```sh
-scripts/install.sh                       # builds and installs: the program, the daemon, the hooks, the skill
-scripts/package.sh                       # dist/cueback.zip, to give to someone: unzip, run install.sh
-~/.local/bin/cueback demo                # a Claude Code session in fifteen seconds
-~/.local/bin/cueback play permission     # any cue, even one that's off; --subagent plays it quieter
-~/.local/bin/cueback theme               # the themes; `cueback theme 2` switches
-~/.local/bin/cueback off                 # silence the cues from Claude Code; `on` brings them back
-```
-
-The install puts the program in `~/.local/bin/cueback`, runs its daemon as a LaunchAgent that starts at login
-(log: `~/Library/Logs/cueback.log`), adds the hooks to `~/.claude/settings.json` next to yours (the old file is
-kept as a backup) and adds a Claude skill, so "cueback'i kapat" or "cueback demo çalıştır" works in any session.
-The first install plays the `installed` cue.
-
-To remove it: run `cueback uninstall-hooks` and `launchctl bootout gui/$(id -u)/app.cueback.daemon`, then delete
-`~/Library/LaunchAgents/app.cueback.daemon.plist`, `~/.local/bin/cueback` and `~/.claude/skills/cueback`.
-
-## Safety
-
-One person reported their trackpad's click feel gone after running nospeaker
-([nospeaker#15](https://github.com/os6/nospeaker/issues/15)), with the driver refusing thousands of commands
-(0xE00002BC) just before. cueback keeps the motor's work light: a tap is one command and a tone one per ~40 ms,
-commands never overlap, a cue is cut off at 1.2 s, 150 ms of quiet follows each one, at most 30 play in a
-minute, and the motor is never driven past its normal maximum. The daemon logs any command the motor refuses.
-Spoken lines (Warhorn's and Owlpost's) and hums and hisses (Blocky's) are the exceptions to "a handful of
-commands": up to about seventy in under a second, one for each beat of the voice's pitch. They're kept short,
-and the motor has refused none of them.
+To give a built copy to someone without developer tools, `scripts/package.sh` makes `dist/cueback.zip`: they
+unzip it and run `sh install.sh`. The copy isn't signed by Apple.
 
 ## Roadmap
 
