@@ -38,7 +38,7 @@ struct Theme: Codable {
     }
 
     /// The themes cueback comes with, numbered in this order.
-    static let builtInIDs = ["classic", "mochi", "warhorn", "blocky", "owlpost"]
+    static let builtInIDs = ["classic", "mochi", "warhorn", "blocky", "owlpost", "r2d2"]
 
     /// The theme a new install starts with.
     static let defaultID = "classic"
@@ -51,6 +51,7 @@ struct Theme: Codable {
         case "warhorn": json = warhorn
         case "blocky": json = blocky
         case "owlpost": json = owlpost
+        case "r2d2": json = r2d2
         default: return nil
         }
         return try? JSONDecoder().decode(Theme.self, from: Data(json.utf8))
@@ -85,7 +86,8 @@ struct Theme: Codable {
         let everything = all()
         if let n = Int(key), everything.indices.contains(n - 1) { return everything[n - 1].id }
         let nicknames = ["klasik": "classic", "warcraft": "warhorn", "wc": "warhorn", "minecraft": "blocky", "mc": "blocky",
-                         "harrypotter": "owlpost", "potter": "owlpost", "hp": "owlpost", "hogwarts": "owlpost"]
+                         "harrypotter": "owlpost", "potter": "owlpost", "hp": "owlpost", "hogwarts": "owlpost",
+                         "starwars": "r2d2", "sw": "r2d2", "r2-d2": "r2d2", "r2": "r2d2", "droid": "r2d2", "astromech": "r2d2"]
         let id = nicknames[key] ?? key
         return everything.contains(where: { $0.id == id }) ? id : nil
     }
@@ -251,6 +253,39 @@ struct Theme: Codable {
       }
     }
     """
+
+    /// 6 · R2-D2: an homage to the small droid of the space films, made of synthesized sounds of its own (no
+    /// film's audio or music). Its chirps bend instead of holding a pitch, and it trills between two pitches
+    /// when it chatters. A curious coo that slides up when you send a prompt, a long rising whistle when it asks
+    /// you something, a two-step whistle up when the work is done, a wavering wail and a low blat when the turn
+    /// fails, and a sigh and a long falling moan when it has waited for you. Nothing is spoken.
+    static let r2d2 = """
+    {
+      "name": "R2-D2",
+      "about": "A little droid's chatter: bent chirps and trills, rising whistles and a wavering wail.",
+      "volume": 50,
+      "subagentLevel": 0.7,
+      "enabled": ["prompt", "permission", "waiting", "input", "done", "error", "subagent-start", "subagent-stop"],
+      "cues": {
+        "permission":     [{"glide": [1700, 2300], "ms": 50, "level": 0.55}, {"glide": [2300, 1500], "ms": 50, "level": 0.55}, {"wait": 30}, {"hz": 2000, "ms": 30, "level": 0.5}, {"hz": 2600, "ms": 30, "level": 0.5}, {"hz": 2000, "ms": 30, "level": 0.5}, {"hz": 2600, "ms": 30, "level": 0.5}, {"wait": 50}, {"glide": [1300, 3000], "ms": 220, "level": 0.6}],
+        "waiting":        [{"glide": [1900, 1500], "ms": 140, "level": 0.5}, {"wait": 60}, {"glide": [1600, 700], "ms": 480, "level": 0.55}, {"wait": 120}, {"glide": [900, 650], "ms": 200, "level": 0.4}],
+        "input":          [{"glide": [1500, 1900], "ms": 60, "level": 0.55}, {"wait": 40}, {"glide": [1700, 2900], "ms": 160, "level": 0.58}, {"wait": 40}, {"hz": 2400, "ms": 30, "level": 0.5}, {"hz": 2900, "ms": 30, "level": 0.5}, {"hz": 2400, "ms": 30, "level": 0.5}],
+        "done":           [{"hz": 1800, "ms": 30, "level": 0.5}, {"hz": 2400, "ms": 30, "level": 0.5}, {"hz": 1800, "ms": 30, "level": 0.5}, {"hz": 2400, "ms": 30, "level": 0.5}, {"hz": 2900, "ms": 40, "level": 0.5}, {"wait": 50}, {"glide": [1600, 2600], "ms": 110, "level": 0.6}, {"wait": 40}, {"glide": [2200, 3600], "ms": 200, "level": 0.65}],
+        "error":          [{"hz": 3000, "ms": 30, "level": 0.55}, {"hz": 3400, "ms": 30, "level": 0.55}, {"hz": 3000, "ms": 30, "level": 0.55}, {"hz": 3400, "ms": 30, "level": 0.55}, {"wait": 20}, {"glide": [3400, 2400], "ms": 140, "level": 0.7}, {"glide": [2700, 1700], "ms": 140, "level": 0.68}, {"glide": [2000, 1000], "ms": 160, "level": 0.65}, {"glide": [1200, 500], "ms": 160, "level": 0.6}, {"wait": 40}, {"hz": 170, "ms": 160, "level": 0.85}],
+        "subagent-start": [{"glide": [1600, 2400], "ms": 50, "level": 0.48}, {"wait": 30}, {"hz": 2000, "ms": 45, "level": 0.45}],
+        "subagent-stop":  [{"hz": 2000, "ms": 45, "level": 0.45}, {"wait": 30}, {"glide": [2400, 1600], "ms": 60, "level": 0.48}],
+        "task-done":      [{"glide": [1800, 3000], "ms": 70, "level": 0.5}],
+        "tool-failed":    [{"glide": [900, 500], "ms": 90, "level": 0.5}],
+        "compact":        [{"hz": 2200, "ms": 60, "level": 0.45}, {"wait": 70}, {"hz": 1700, "ms": 60, "level": 0.42}, {"wait": 100}, {"hz": 1300, "ms": 60, "level": 0.38}, {"wait": 140}, {"glide": [1100, 600], "ms": 220, "level": 0.45}],
+        "session-start":  [{"glide": [500, 2200], "ms": 260, "level": 0.55}, {"wait": 70}, {"hz": 2200, "ms": 45, "level": 0.5}, {"wait": 35}, {"hz": 2700, "ms": 45, "level": 0.5}, {"wait": 35}, {"hz": 2000, "ms": 70, "level": 0.5}],
+        "session-end":    [{"hz": 2000, "ms": 50, "level": 0.48}, {"wait": 40}, {"hz": 1600, "ms": 50, "level": 0.46}, {"wait": 70}, {"glide": [1800, 400], "ms": 340, "level": 0.55}],
+        "installed":      [{"glide": [500, 2200], "ms": 240, "level": 0.55}, {"wait": 60}, {"hz": 1800, "ms": 30, "level": 0.5}, {"hz": 2400, "ms": 30, "level": 0.5}, {"hz": 1800, "ms": 30, "level": 0.5}, {"hz": 2400, "ms": 30, "level": 0.5}, {"wait": 50}, {"glide": [1600, 2600], "ms": 110, "level": 0.6}, {"wait": 40}, {"glide": [2200, 3600], "ms": 200, "level": 0.65}],
+        "fanfare":        [{"hz": 2000, "ms": 30, "level": 0.5}, {"hz": 2600, "ms": 30, "level": 0.5}, {"hz": 2000, "ms": 30, "level": 0.5}, {"hz": 2600, "ms": 30, "level": 0.5}, {"glide": [2600, 1800], "ms": 60, "level": 0.55}, {"wait": 40}, {"glide": [1500, 2700], "ms": 120, "level": 0.6}, {"wait": 40}, {"glide": [2200, 3600], "ms": 180, "level": 0.65}, {"wait": 30}, {"hz": 3200, "ms": 30, "level": 0.55}, {"hz": 3600, "ms": 30, "level": 0.55}, {"hz": 3200, "ms": 30, "level": 0.55}, {"hz": 3600, "ms": 30, "level": 0.55}],
+        "level":          [{"hz": 2200, "ms": 60, "level": 0.8}],
+        "prompt":         [{"glide": [1100, 1400], "ms": 90, "level": 0.48}, {"glide": [1400, 1250], "ms": 50, "level": 0.46}, {"glide": [1250, 2500], "ms": 210, "level": 0.58}, {"wait": 30}, {"glide": [2500, 2950], "ms": 55, "level": 0.52}]
+      }
+    }
+    """
 }
 
 /// Every cue cueback knows, and what triggers it.
@@ -290,8 +325,9 @@ func runTheme(_ choice: String?) {
     let everything = Theme.all()
     guard let choice else {
         let current = Config.load().theme ?? Theme.defaultID
+        let width = everything.map { $0.theme.name.count }.max() ?? 0   // the longest name, so none is cut short
         for (i, entry) in everything.enumerated() {
-            let name = entry.theme.name.padding(toLength: 8, withPad: " ", startingAt: 0)
+            let name = entry.theme.name.padding(toLength: width, withPad: " ", startingAt: 0)
             print("  \(entry.id == current ? "▸" : " ") \(i + 1) · \(name) \(entry.theme.about ?? "")")
         }
         return

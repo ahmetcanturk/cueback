@@ -12,7 +12,7 @@ the sound off. There's no speaker in the trackpad: cueback drives its haptic mot
 
 | cue | Claude Code event | default | feel in Classic |
 |---|---|---|---|
-| `prompt` | UserPromptSubmit | off (on in Warhorn) | one light tap |
+| `prompt` | UserPromptSubmit | off (on in Warhorn and R2-D2) | one light tap |
 | `permission` | PermissionRequest | on | three firm taps, rising |
 | `waiting` | Notification · `idle_prompt` | on | two soft taps |
 | `input` | Elicitation | on | two rising taps |
@@ -32,7 +32,7 @@ from Claude's internal agents, and `PreToolUse`/`PostToolUse`, which fire dozens
 
 ## Themes
 
-A theme decides what every cue feels and sounds like. Five come with cueback:
+A theme decides what every cue feels and sounds like. Six come with cueback:
 
 - **1 · Classic**: firm taps and clear notes (the table above). A new install starts here.
 - **2 · Mochi**: calm and sweet. Slow, soft pulses you feel under your finger and quiet music-box notes that
@@ -43,9 +43,11 @@ A theme decides what every cue feels and sounds like. Five come with cueback:
   goes off when the turn fails, digging, pops and tinkling orbs.
 - **5 · Owlpost**: an homage to stories about a school of wizards. An owl hoots when you're needed, celesta
   notes ring, a quill scratches, and a British voice says a spell when the work is finished.
+- **6 · R2-D2**: an homage to the small droid of the space films. Bent chirps and trills, a curious coo
+  when you send a prompt, a rising whistle when it asks you something, and a wavering wail when the turn fails.
 
-Switch in the menu bar, or with `cueback theme 2` (`cueback theme` lists them). Warhorn, Blocky and Owlpost are
-sounds of their own: no game's or film's audio or music is in them.
+Switch in the menu bar, or with `cueback theme 2` (`cueback theme` lists them). Warhorn, Blocky, Owlpost and
+R2-D2 are sounds of their own: no game's or film's audio or music is in them.
 
 [THEMES.md](THEMES.md) has what each theme plays for each cue, and how to write a theme of your own.
 

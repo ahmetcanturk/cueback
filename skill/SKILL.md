@@ -13,7 +13,7 @@ error, Claude waiting for the user, subagents starting and stopping. Its program
 | turn it off ("kapat", "sustur") | `~/.local/bin/cueback off` |
 | turn it back on ("aç") | `~/.local/bin/cueback on` |
 | see the demo ("demo çalıştır") | `~/.local/bin/cueback demo` |
-| switch the theme ("tema 2", "mochi'ye geç", "warcraft teması", "harry potter teması", "klasiğe dön") | `~/.local/bin/cueback theme <name or number>`: 1 classic, 2 mochi, 3 warhorn (also "warcraft"), 4 blocky (also "minecraft"), 5 owlpost (also "potter", "hp", "hogwarts"); with no name it lists them |
+| switch the theme ("tema 2", "mochi'ye geç", "warcraft teması", "harry potter teması", "star wars teması", "r2d2 teması", "klasiğe dön") | `~/.local/bin/cueback theme <name or number>`: 1 classic, 2 mochi, 3 warhorn (also "warcraft"), 4 blocky (also "minecraft"), 5 owlpost (also "potter", "hp", "hogwarts"), 6 r2d2 (also "starwars", "sw", "r2"); with no name it lists them |
 | check it ("durum") | `~/.local/bin/cueback status` |
 | hear one cue ("done'ı çal") | `~/.local/bin/cueback play <cue>`; `~/.local/bin/cueback cues` lists them |
 | restart it, or bring it back after Quit ("yeniden başlat") | `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/app.cueback.daemon.plist 2>/dev/null; launchctl kickstart -k gui/$(id -u)/app.cueback.daemon` |

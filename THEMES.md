@@ -1,9 +1,9 @@
 # Themes
 
-A theme decides what every cue feels and sounds like on the trackpad. cueback comes with five, and plays one of
+A theme decides what every cue feels and sounds like on the trackpad. cueback comes with six, and plays one of
 your own from a JSON file.
 
-## The five themes
+## The six themes
 
 | theme | what it's like |
 |---|---|
@@ -12,32 +12,35 @@ your own from a JSON file.
 | **3 · Warhorn** | Heavy and slow, an homage to orc-and-human strategy games: war drums, a horn call, and a gruff worker who talks back through the trackpad. |
 | **4 · Blocky** | An homage to block-building games: a nasal "hrmm?", a hissing fuse, digging, pops and tinkling orbs. |
 | **5 · Owlpost** | An homage to stories about a school of wizards: an owl's hoot, glassy celesta notes, a scratching quill and spells said aloud. |
+| **6 · R2-D2** | An homage to the small droid of the space films: bent chirps and trills, rising whistles, a curious coo and a long wavering wail. |
 
-Warhorn, Blocky and Owlpost are made of sounds of their own. No game's or film's audio or music is in them:
-Warhorn's and Owlpost's lines are said by macOS's own voices, and the rest is synthesized.
+Warhorn, Blocky, Owlpost and R2-D2 are made of sounds of their own. No game's or film's audio or music is
+in them: Warhorn's and Owlpost's lines are said by macOS's own voices, and the rest is synthesized.
 
 ### What each one plays
 
-| when | Classic | Mochi | Warhorn | Blocky | Owlpost |
-|---|---|---|---|---|---|
-| you send a prompt | – | – | two quick grunts | – | – |
-| Claude asks for permission | three firm taps, rising | two soft knocks, then a rising question | a drum, then a horn rising a fifth | "hm… hrmm?" | an owl's "hoo, hoo-hoo?", then a celesta note |
-| Claude has waited a minute for you | two soft taps | a slow purr, then a bell note | distant drums | a long, falling "hrmmm" | two slow, distant hoots, then a quiet note |
-| an MCP server asks for input | two rising taps | two rising bell notes | a short horn and a drum | a short, rising "huh?" | a quill scratches, then two rising notes |
-| Claude is finished | two rising notes | "ding, dong" | says "Job's done!" | three orb chimes, then a rising chime | says "Mischief managed." |
-| the turn fails | a tap, then a low buzz | a soft pulse, then two falling bell notes | a drum, then three falling tones | a fuse hisses, then a boom | a spell fizzles out, then a thud |
-| a tool call fails | – | – | – | a hurt "uh!" | – |
-| a subagent starts | one soft tick | a soft pulse, then a bell note | says "Zug zug." | three crunches of digging | says "Lumos!" |
-| a subagent finishes | two soft ticks | a bell note, then a soft pulse | says "Work complete." | a crunch and a pop | says "Nox." |
+| when | Classic | Mochi | Warhorn | Blocky | Owlpost | R2-D2 |
+|---|---|---|---|---|---|---|
+| you send a prompt | – | – | two quick grunts | – | – | a curious coo that slides up |
+| Claude asks for permission | three firm taps, rising | two soft knocks, then a rising question | a drum, then a horn rising a fifth | "hm… hrmm?" | an owl's "hoo, hoo-hoo?", then a celesta note | two bent chirps, a trill, then a long rising whistle |
+| Claude has waited a minute for you | two soft taps | a slow purr, then a bell note | distant drums | a long, falling "hrmmm" | two slow, distant hoots, then a quiet note | a sigh, then a long falling moan |
+| an MCP server asks for input | two rising taps | two rising bell notes | a short horn and a drum | a short, rising "huh?" | a quill scratches, then two rising notes | a chirp, a rising whistle, a tiny trill |
+| Claude is finished | two rising notes | "ding, dong" | says "Job's done!" | three orb chimes, then a rising chime | says "Mischief managed." | a trill of chatter, then a two-step whistle up |
+| the turn fails | a tap, then a low buzz | a soft pulse, then two falling bell notes | a drum, then three falling tones | a fuse hisses, then a boom | a spell fizzles out, then a thud | an alarmed trill, a long wavering wail, a low blat |
+| a tool call fails | – | – | – | a hurt "uh!" | – | – |
+| a subagent starts | one soft tick | a soft pulse, then a bell note | says "Zug zug." | three crunches of digging | says "Lumos!" | a chirp sliding up, then a beep |
+| a subagent finishes | two soft ticks | a bell note, then a soft pulse | says "Work complete." | a crunch and a pop | says "Nox." | a beep, then a chirp sliding down |
 
 A dash means that theme stays silent then. A cue that comes from inside a subagent (its permission request,
-say) plays quieter: at 60% of its strength in Classic, 65% in Warhorn, 70% in Mochi, Blocky and Owlpost.
+say) plays quieter: at 60% of its strength in Classic, 65% in Warhorn, and 70% in Mochi, Blocky, Owlpost and
+R2-D2.
 
 ## Switching
 
 - **Menu bar:** click the bell and pick under Theme.
 - **Terminal:** `cueback theme` lists the themes and marks the one in use; `cueback theme 2` or
-  `cueback theme mochi` switches. `warcraft`, `minecraft` and `potter` also work, for Warhorn, Blocky and Owlpost.
+  `cueback theme mochi` switches. `warcraft`, `minecraft`, `potter` and `starwars` also work, for Warhorn,
+  Blocky, Owlpost and R2-D2.
 - **Claude:** say "tema 2" or "mochi'ye geç" in any session.
 
 The new theme takes over at once and plays its `installed` cue, so you hear what you picked. Your choice is kept
