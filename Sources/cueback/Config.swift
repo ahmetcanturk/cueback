@@ -2,6 +2,7 @@ import Foundation
 
 /// What the menu bar changes, kept in ~/Library/Application Support/cueback/config.json.
 struct Config: Codable, Equatable {
+    var theme: String?             // a built-in theme's id; nil: classic (or the daemon's --theme)
     var volume: Double?            // 0…100; nil: the theme's
     var quietHours = false
     var quietStart = 22 * 60       // minutes after midnight
@@ -13,6 +14,7 @@ struct Config: Codable, Equatable {
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
+        theme = try c.decodeIfPresent(String.self, forKey: .theme)
         volume = try c.decodeIfPresent(Double.self, forKey: .volume)
         quietHours = try c.decodeIfPresent(Bool.self, forKey: .quietHours) ?? false
         quietStart = try c.decodeIfPresent(Int.self, forKey: .quietStart) ?? 22 * 60

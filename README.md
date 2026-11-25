@@ -12,6 +12,7 @@ the sound off. There's no speaker in the trackpad: cueback drives its haptic mot
 
 | cue | Claude Code event | default | feel |
 |---|---|---|---|
+| `prompt` | UserPromptSubmit | off (on in Warhorn) | one light tap |
 | `permission` | PermissionRequest | on | three firm taps, rising |
 | `waiting` | Notification · `idle_prompt` | on | two soft taps |
 | `input` | Elicitation | on | two rising taps |
@@ -28,6 +29,23 @@ plays at 60% of its strength (`subagentLevel` in the theme), and the subagents' 
 
 Left out on purpose: `Stop` while background tasks still run or a hook continued the turn, `SubagentStop`
 from Claude's internal agents, and `PreToolUse`/`PostToolUse`, which fire dozens of times a minute.
+
+## Themes
+
+- **1 · Classic**: firm taps and clear notes (the table above).
+- **2 · Mochi**: calm and sweet. Slow, soft pulses you feel under your finger and quiet music-box notes that
+  ring and fade, at gentler strengths: two soft knocks and a little rising question when Claude asks, a slow
+  purr while it waits, a "ding, dong" when it's done, a low "uh-oh" when something fails.
+
+- **3 · Warhorn**: heavy and slow, an homage to orc-and-human strategy games. Deep war drums, a horn that
+  swells up a fifth when you're needed, two quick wordless grunts when you send a prompt, and a gruff worker
+  who talks back through the trackpad when the work is finished: "Job's done!" The voice is macOS's own,
+  lowered in pitch.
+- **4 · Blocky**: an homage to block-building games. A wooden thunk for a block set down, a pop for something
+  picked up, tinkling orbs when the work is done, sparse calm notes while it waits.
+
+Warhorn and Blocky are patterns of their own: no game's sounds or music are in them. Switch in the menu bar, or
+with `cueback theme 2` (`cueback theme` lists them). Every theme keeps to the same limits.
 
 ## How it works
 
@@ -69,6 +87,8 @@ One person reported their trackpad's click feel gone after running nospeaker
 (0xE00002BC) just before. cueback keeps the motor's work light: a tap is one command and a tone one per ~40 ms,
 commands never overlap, a cue is cut off at 1.2 s, 150 ms of quiet follows each one, at most 30 play in a
 minute, and the motor is never driven past its normal maximum. The daemon logs any command the motor refuses.
+Spoken lines (Warhorn's) are the one exception to "a handful of commands": about sixty in under a second, one
+for each beat of the voice's pitch. They're kept short, and the motor has refused none of them.
 
 ## Roadmap
 

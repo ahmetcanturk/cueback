@@ -35,6 +35,7 @@ cueback · haptic cues for Claude Code, played on your Mac's trackpad
   cueback play <cue>     play one cue now, even one that's off (needs the daemon)
       --subagent         as if it came from inside a subagent (quieter)
   cueback demo           a Claude Code session in fifteen seconds, on the trackpad
+  cueback theme [n]      list the themes, or switch to one by name or number
   cueback off | on       silence the cues from Claude Code, or bring them back
   cueback status         on or off, and whether the daemon is running
   cueback cues           list the cues and the events that trigger them
@@ -74,6 +75,8 @@ case "status":
     print("cueback is \(Switch.isOff ? "off" : "on") · daemon \(Socket.isServing() ? "running" : "not running")")
 case "demo":
     runDemo()
+case "theme":
+    runTheme(args.first)
 case "cues":
     printCues()
 case "install-hooks":

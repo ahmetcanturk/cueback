@@ -154,17 +154,58 @@ final class Motor {
         play([(160, 0.8), (640, 0.2)], ms: Motor.tapMilliseconds, level: strength)
     }
 
-    /// A tone in commands of about 40 ms, the first and last a little softer so it starts and ends without a click.
-    /// 80 Hz to 4 kHz: the motor's range.
-    func tone(_ hz: Double, seconds: Double, level: Double) {
+    /// A tone in commands of 30–40 ms, 80 Hz to 4 kHz (the motor's range), with its strength shaped over them:
+    /// `plain` holds it, with the first and last a little softer so it starts and ends without a click; `bell`
+    /// strikes and fades like a music box; `swell` rises and falls like a breath.
+    func tone(_ hz: Double, seconds: Double, level: Double, shape: ToneShape = .plain) {
         let f = min(4000, max(80, hz))
-        let pieces = max(1, Int((seconds / 0.04).rounded()))
+        let pieces = max(1, Int((seconds / (shape == .plain ? 0.04 : 0.03)).rounded()))
         let length = seconds / Double(pieces)
         for i in 0..<pieces {
-            let edge: Double = pieces == 1 ? 1 : (i == 0 ? 0.8 : (i == pieces - 1 ? 0.75 : 1))
-            play([(f, 1)], ms: max(1, (length - Motor.guardSeconds) * 1000), level: level * edge)
+            let weight: Double
+            switch shape {
+            case .plain: weight = pieces == 1 ? 1 : (i == 0 ? 0.8 : (i == pieces - 1 ? 0.75 : 1))
+            case .bell: weight = pow(0.7, Double(i))
+            case .swell: weight = pieces < 3 ? 0.8 : sin(.pi * (Double(i) + 0.5) / Double(pieces))
+            }
+            play([(f, 1)], ms: max(1, (length - Motor.guardSeconds) * 1000), level: level * weight)
         }
     }
+
+    /// Speaks analysed speech (see Speech). Every voiced moment is the voice's two strongest resonances, started
+    /// again on each beat of its pitch so they buzz like a voice; hiss sounds are short bursts of high tones.
+    /// `pitch` and `formants` scale the voice (under 1: deeper and bigger). This is the one thing that sends
+    /// many commands a second (about one per pitch beat), so lines are short and it stops at `limit` seconds.
+    /// Returns how long it spoke.
+    func speak(_ frames: [SpeechFrame], level: Double, pitch: Double, formants: Double, limit: Double) -> Double {
+        let total = min(Double(frames.count) * Speech.hop, limit)
+        let start = Clock.now()
+        var t = 0.0
+        while t < total {
+            let frame = frames[min(frames.count - 1, Int(t / Speech.hop))]
+            var step = 0.005
+            if frame.level > 0 {
+                if frame.voiced {
+                    step = 1 / min(300, max(45, frame.f0 * pitch))
+                    let tones: [(hz: Double, amp: Double)] = [
+                        (frame.formants[0] * formants, frame.amps[0]), (frame.formants[1] * formants, frame.amps[1] * 1.8),
+                    ]
+                    play(tones, ms: (step - Motor.guardSeconds) * 1000, level: frame.level * level)
+                } else {
+                    step = 0.008
+                    let hiss: [(hz: Double, amp: Double)] = (0..<3).map { _ in (Double.random(in: 2700...4300) * formants, 1.0) }
+                    play(hiss, ms: (step - Motor.guardSeconds) * 1000, level: frame.level * 0.7 * level)
+                }
+            }
+            t += step
+            Clock.wait(until: Clock.after(t, from: start))
+        }
+        return total
+    }
+}
+
+enum ToneShape: String {
+    case plain, bell, swell
 }
 
 /// A note name like "A6" or "C#5" in Hz (A4 = 440), or nil if it isn't one.

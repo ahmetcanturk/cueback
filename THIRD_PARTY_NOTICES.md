@@ -1,7 +1,8 @@
 # Third-party notices
 
 cueback adapts code from **nospeaker** (https://github.com/os6/nospeaker): the MultitouchSupport motor access
-and the actuation format in `Sources/cueback/Haptics.swift`. Its license:
+and the actuation format in `Sources/cueback/Haptics.swift`, and the speech analysis in
+`Sources/cueback/Speech.swift`. Its license:
 
 ```text
 MIT License

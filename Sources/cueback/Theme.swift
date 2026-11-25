@@ -4,29 +4,62 @@ import Foundation
 struct Step: Codable {
     var tap: Double?      // a felt tap, strength 0…1
     var note: String?     // a tone by note name, like "A6"
-    var hz: Double?       // …or by frequency, 80 to 4000 Hz
+    var hz: Double?       // …or by frequency, 80 to 4000 Hz (below ~200 Hz it's felt more than heard)
     var ms: Double?       // a tone's length (default 120)
     var level: Double?    // a tone's strength, 0…1 (default 0.8)
+    var shape: String?    // a tone's shape: "plain", "bell" (strike and fade) or "swell"; default: the theme's
     var wait: Double?     // a pause, in ms
+    var say: String?      // a short line the trackpad speaks, in macOS's `voice` at `rate` words a minute
+    var voice: String?
+    var rate: Double?
+    var pitch: Double?    // scales the voice's pitch (under 1: deeper)
+    var formants: Double? // scales its resonances (under 1: a bigger voice)
 }
 
-/// A set of cues. Only the ones named in `enabled` play.
+/// A set of cues. Only the ones named in `enabled` play for Claude Code's events; any of them plays as a preview.
 struct Theme: Codable {
     var name: String
-    var volume: Double?   // 0…100 (default 100)
+    var about: String?
+    var volume: Double?          // 0…100 (default 100)
     var subagentLevel: Double?   // cues from inside a subagent play at this share of their strength (default 0.6)
+    var soft: Bool?              // true: low tones swell like a breath and notes ring and fade like bells
     var enabled: [String]
     var cues: [String: [Step]]
 
-    static func load(path: String?) throws -> Theme {
-        let data = try path.map { try Data(contentsOf: URL(fileURLWithPath: $0)) } ?? Data(builtIn.utf8)
-        return try JSONDecoder().decode(Theme.self, from: data)
+    /// A theme from a JSON file.
+    static func load(path: String) throws -> Theme {
+        try JSONDecoder().decode(Theme.self, from: Data(contentsOf: URL(fileURLWithPath: path)))
     }
 
-    /// The default theme: short and quiet. The cues that need you are on, and so are the subagents' soft ticks.
-    static let builtIn = """
+    /// The themes cueback comes with, numbered in this order.
+    static let builtInIDs = ["classic", "mochi", "warhorn", "blocky"]
+
+    static func builtIn(_ id: String) -> Theme? {
+        let json: String
+        switch id {
+        case "classic": json = classic
+        case "mochi": json = mochi
+        case "warhorn": json = warhorn
+        case "blocky": json = blocky
+        default: return nil
+        }
+        return try? JSONDecoder().decode(Theme.self, from: Data(json.utf8))
+    }
+
+    /// A theme's id from its id, its number ("2" is "mochi") or what people call it.
+    static func builtInID(_ text: String) -> String? {
+        let key = text.lowercased()
+        if let n = Int(key), builtInIDs.indices.contains(n - 1) { return builtInIDs[n - 1] }
+        let nicknames = ["klasik": "classic", "warcraft": "warhorn", "wc": "warhorn", "minecraft": "blocky", "mc": "blocky"]
+        let id = nicknames[key] ?? key
+        return builtInIDs.contains(id) ? id : nil
+    }
+
+    /// 1 · Classic: firm taps and clear notes. The cues that need you are on, and so are the subagents' soft ticks.
+    static let classic = """
     {
-      "name": "Default",
+      "name": "Classic",
+      "about": "Firm taps and clear notes.",
       "volume": 50,
       "subagentLevel": 0.6,
       "enabled": ["permission", "waiting", "input", "done", "error", "subagent-start", "subagent-stop"],
@@ -45,7 +78,106 @@ struct Theme: Codable {
         "session-end":    [{"note": "E6", "ms": 80, "level": 0.6}, {"note": "A5", "ms": 140, "level": 0.6}],
         "installed":      [{"tap": 0.5}, {"wait": 120}, {"tap": 0.7}, {"wait": 160}, {"note": "E6", "ms": 80, "level": 0.7}, {"note": "A6", "ms": 80, "level": 0.8}, {"note": "E7", "ms": 220, "level": 0.9}],
         "fanfare":        [{"note": "A5", "ms": 80, "level": 0.7}, {"note": "C#6", "ms": 80, "level": 0.75}, {"note": "E6", "ms": 80, "level": 0.8}, {"note": "A6", "ms": 260, "level": 0.95}],
-        "level":          [{"tap": 0.9}]
+        "level":          [{"tap": 0.9}],
+        "prompt":         [{"tap": 0.35}]
+      }
+    }
+    """
+
+    /// 2 · Mochi: calm and sweet. Slow, soft pulses you feel under your finger (around 110 Hz, swelling like a
+    /// breath) and quiet music-box notes from the middle of the motor's range that ring and fade. Gentler
+    /// strengths than Classic, and nothing sharp.
+    static let mochi = """
+    {
+      "name": "Mochi",
+      "about": "Calm and sweet: soft pulses you feel, and quiet music-box notes.",
+      "volume": 50,
+      "subagentLevel": 0.7,
+      "soft": true,
+      "enabled": ["permission", "waiting", "input", "done", "error", "subagent-start", "subagent-stop"],
+      "cues": {
+        "permission":     [{"hz": 110, "ms": 90, "level": 0.55}, {"wait": 170}, {"hz": 110, "ms": 90, "level": 0.6}, {"wait": 200}, {"note": "G5", "ms": 120, "level": 0.45}, {"wait": 30}, {"note": "C6", "ms": 180, "level": 0.5}],
+        "waiting":        [{"hz": 100, "ms": 90, "level": 0.3}, {"wait": 50}, {"hz": 100, "ms": 90, "level": 0.42}, {"wait": 50}, {"hz": 100, "ms": 90, "level": 0.42}, {"wait": 50}, {"hz": 100, "ms": 90, "level": 0.3}],
+        "input":          [{"note": "A5", "ms": 120, "level": 0.42}, {"wait": 40}, {"note": "D6", "ms": 180, "level": 0.46}],
+        "done":           [{"note": "E6", "ms": 150, "level": 0.46}, {"wait": 60}, {"note": "C6", "ms": 240, "level": 0.5}],
+        "error":          [{"hz": 330, "ms": 120, "level": 0.4}, {"wait": 50}, {"hz": 247, "ms": 200, "level": 0.38}],
+        "subagent-start": [{"hz": 110, "ms": 90, "level": 0.45}, {"wait": 60}, {"note": "A5", "ms": 110, "level": 0.36}],
+        "subagent-stop":  [{"note": "A5", "ms": 110, "level": 0.36}, {"wait": 60}, {"hz": 110, "ms": 90, "level": 0.42}],
+        "task-done":      [{"note": "C6", "ms": 160, "level": 0.4}],
+        "tool-failed":    [{"hz": 110, "ms": 90, "level": 0.32}],
+        "compact":        [{"hz": 294, "ms": 130, "level": 0.28}, {"wait": 40}, {"hz": 247, "ms": 130, "level": 0.26}, {"wait": 40}, {"hz": 196, "ms": 200, "level": 0.24}],
+        "session-start":  [{"note": "C6", "ms": 100, "level": 0.38}, {"wait": 40}, {"note": "D6", "ms": 100, "level": 0.4}, {"wait": 40}, {"note": "E6", "ms": 180, "level": 0.42}],
+        "session-end":    [{"note": "E6", "ms": 100, "level": 0.4}, {"wait": 40}, {"note": "D6", "ms": 100, "level": 0.38}, {"wait": 40}, {"note": "C6", "ms": 200, "level": 0.38}],
+        "installed":      [{"hz": 110, "ms": 90, "level": 0.5}, {"wait": 130}, {"hz": 110, "ms": 90, "level": 0.5}, {"wait": 180}, {"note": "G5", "ms": 100, "level": 0.42}, {"wait": 30}, {"note": "C6", "ms": 100, "level": 0.44}, {"wait": 30}, {"note": "E6", "ms": 100, "level": 0.46}, {"wait": 30}, {"note": "C6", "ms": 200, "level": 0.46}],
+        "fanfare":        [{"note": "C6", "ms": 100, "level": 0.4}, {"wait": 30}, {"note": "E6", "ms": 100, "level": 0.42}, {"wait": 30}, {"note": "G6", "ms": 100, "level": 0.44}, {"wait": 30}, {"note": "E6", "ms": 100, "level": 0.42}, {"wait": 30}, {"note": "C6", "ms": 240, "level": 0.46}],
+        "level":          [{"hz": 110, "ms": 90, "level": 0.8}],
+        "prompt":         [{"hz": 110, "ms": 90, "level": 0.35}]
+      }
+    }
+    """
+
+    /// 3 · Warhorn: heavy and slow, an homage to orc-and-human strategy games, with patterns of its own (no game's
+    /// sounds or music). Deep war drums (95 Hz, struck and fading), a horn that swells up a fifth when you're
+    /// needed, and a gruff worker who talks back through the trackpad: short lines said by macOS's own voice,
+    /// lowered in pitch, when you give an order, when the job is done and for the subagents. No recording from
+    /// any game is used.
+    static let warhorn = """
+    {
+      "name": "Warhorn",
+      "about": "War drums, a horn call and a gruff worker who talks back.",
+      "volume": 50,
+      "subagentLevel": 0.65,
+      "soft": true,
+      "enabled": ["prompt", "permission", "waiting", "input", "done", "error", "subagent-start", "subagent-stop"],
+      "cues": {
+        "permission":     [{"hz": 95, "ms": 110, "level": 0.85, "shape": "bell"}, {"wait": 130}, {"hz": 196, "ms": 220, "level": 0.6}, {"hz": 294, "ms": 360, "level": 0.72}],
+        "waiting":        [{"hz": 95, "ms": 110, "level": 0.55, "shape": "bell"}, {"wait": 260}, {"hz": 95, "ms": 110, "level": 0.38, "shape": "bell"}, {"wait": 110}, {"hz": 95, "ms": 110, "level": 0.38, "shape": "bell"}],
+        "input":          [{"hz": 294, "ms": 200, "level": 0.6}, {"wait": 90}, {"hz": 95, "ms": 110, "level": 0.55, "shape": "bell"}],
+        "prompt":         [{"hz": 170, "ms": 50, "level": 0.7, "shape": "plain"}, {"hz": 150, "ms": 90, "level": 0.7, "shape": "bell"}, {"wait": 90}, {"hz": 160, "ms": 50, "level": 0.7, "shape": "plain"}, {"hz": 135, "ms": 110, "level": 0.7, "shape": "bell"}],
+        "done":           [{"say": "Job's done!", "voice": "Ralph", "rate": 150, "pitch": 0.75, "formants": 0.9, "level": 0.95}],
+        "error":          [{"hz": 95, "ms": 110, "level": 0.9, "shape": "bell"}, {"wait": 60}, {"hz": 220, "ms": 170, "level": 0.6}, {"hz": 185, "ms": 170, "level": 0.55}, {"hz": 147, "ms": 300, "level": 0.5}],
+        "subagent-start": [{"say": "Zug zug.", "voice": "Ralph", "rate": 150, "pitch": 0.75, "formants": 0.9, "level": 0.75}],
+        "subagent-stop":  [{"say": "Work complete.", "voice": "Ralph", "rate": 150, "pitch": 0.75, "formants": 0.9, "level": 0.75}],
+        "task-done":      [{"tap": 0.7}, {"note": "E7", "ms": 60, "level": 0.45, "shape": "bell"}, {"wait": 110}, {"tap": 0.9}, {"note": "A7", "ms": 90, "level": 0.5, "shape": "bell"}],
+        "tool-failed":    [{"hz": 95, "ms": 110, "level": 0.4, "shape": "bell"}],
+        "compact":        [{"hz": 95, "ms": 110, "level": 0.6, "shape": "bell"}, {"wait": 120}, {"hz": 95, "ms": 110, "level": 0.45, "shape": "bell"}, {"wait": 120}, {"hz": 95, "ms": 110, "level": 0.32, "shape": "bell"}, {"wait": 120}, {"hz": 95, "ms": 110, "level": 0.22, "shape": "bell"}],
+        "session-start":  [{"hz": 196, "ms": 180, "level": 0.55}, {"hz": 294, "ms": 260, "level": 0.65}, {"wait": 60}, {"hz": 95, "ms": 110, "level": 0.7, "shape": "bell"}],
+        "session-end":    [{"hz": 294, "ms": 200, "level": 0.55}, {"hz": 196, "ms": 320, "level": 0.5}],
+        "installed":      [{"hz": 95, "ms": 110, "level": 0.85, "shape": "bell"}, {"wait": 140}, {"hz": 95, "ms": 110, "level": 0.5, "shape": "bell"}, {"wait": 80}, {"hz": 95, "ms": 110, "level": 0.5, "shape": "bell"}, {"wait": 150}, {"hz": 196, "ms": 180, "level": 0.6}, {"hz": 294, "ms": 280, "level": 0.72}],
+        "fanfare":        [{"hz": 196, "ms": 160, "level": 0.6}, {"hz": 294, "ms": 160, "level": 0.66}, {"hz": 392, "ms": 300, "level": 0.72}, {"wait": 60}, {"hz": 95, "ms": 130, "level": 0.9, "shape": "bell"}],
+        "level":          [{"hz": 95, "ms": 110, "level": 0.9, "shape": "bell"}]
+      }
+    }
+    """
+
+    /// 4 · Blocky: an homage to block-building games, again with patterns of its own. A wooden thunk for a block
+    /// set down, a rising pop for something picked up, tinkling orbs when the work is done, a low "hrm?" when
+    /// you're needed, and sparse calm notes while it waits.
+    static let blocky = """
+    {
+      "name": "Blocky",
+      "about": "Wooden thunks, pops and tinkling orbs, with sparse calm notes.",
+      "volume": 50,
+      "subagentLevel": 0.7,
+      "soft": true,
+      "enabled": ["permission", "waiting", "input", "done", "error", "subagent-start", "subagent-stop"],
+      "cues": {
+        "permission":     [{"tap": 0.55}, {"hz": 150, "ms": 45, "level": 0.55, "shape": "bell"}, {"wait": 140}, {"tap": 0.55}, {"hz": 150, "ms": 45, "level": 0.55, "shape": "bell"}, {"wait": 200}, {"hz": 294, "ms": 130, "level": 0.5}, {"hz": 370, "ms": 170, "level": 0.56}],
+        "waiting":        [{"note": "E6", "ms": 220, "level": 0.42}, {"wait": 340}, {"note": "G6", "ms": 280, "level": 0.42}],
+        "input":          [{"hz": 330, "ms": 130, "level": 0.5}, {"hz": 277, "ms": 130, "level": 0.5}, {"wait": 60}, {"hz": 349, "ms": 180, "level": 0.56}],
+        "done":           [{"note": "G6", "ms": 60, "level": 0.42}, {"wait": 40}, {"note": "C7", "ms": 60, "level": 0.44}, {"wait": 40}, {"note": "E7", "ms": 60, "level": 0.46}, {"wait": 40}, {"note": "G7", "ms": 160, "level": 0.5}],
+        "error":          [{"tap": 0.8}, {"hz": 180, "ms": 80, "level": 0.6, "shape": "bell"}, {"wait": 50}, {"hz": 520, "ms": 40, "level": 0.45, "shape": "plain"}, {"hz": 330, "ms": 100, "level": 0.42, "shape": "bell"}],
+        "subagent-start": [{"tap": 0.5}, {"hz": 150, "ms": 45, "level": 0.5, "shape": "bell"}],
+        "subagent-stop":  [{"hz": 700, "ms": 30, "level": 0.4, "shape": "plain"}, {"hz": 1400, "ms": 45, "level": 0.45, "shape": "bell"}],
+        "task-done":      [{"note": "E7", "ms": 80, "level": 0.42}],
+        "tool-failed":    [{"tap": 0.4}, {"hz": 130, "ms": 45, "level": 0.4, "shape": "bell"}],
+        "compact":        [{"note": "E6", "ms": 160, "level": 0.36}, {"wait": 80}, {"note": "C6", "ms": 160, "level": 0.34}, {"wait": 80}, {"note": "A5", "ms": 260, "level": 0.32}],
+        "session-start":  [{"tap": 0.5}, {"hz": 150, "ms": 45, "level": 0.5, "shape": "bell"}, {"wait": 120}, {"hz": 700, "ms": 30, "level": 0.4, "shape": "plain"}, {"hz": 1400, "ms": 45, "level": 0.45, "shape": "bell"}, {"wait": 120}, {"note": "G6", "ms": 200, "level": 0.42}],
+        "session-end":    [{"note": "G6", "ms": 160, "level": 0.4}, {"wait": 80}, {"note": "E6", "ms": 260, "level": 0.38}],
+        "installed":      [{"tap": 0.55}, {"hz": 150, "ms": 45, "level": 0.55, "shape": "bell"}, {"wait": 120}, {"tap": 0.55}, {"hz": 150, "ms": 45, "level": 0.55, "shape": "bell"}, {"wait": 140}, {"hz": 700, "ms": 30, "level": 0.4, "shape": "plain"}, {"hz": 1400, "ms": 45, "level": 0.45, "shape": "bell"}, {"wait": 120}, {"note": "G6", "ms": 60, "level": 0.42}, {"wait": 30}, {"note": "C7", "ms": 60, "level": 0.44}, {"wait": 30}, {"note": "E7", "ms": 60, "level": 0.46}, {"wait": 30}, {"note": "G7", "ms": 150, "level": 0.5}],
+        "fanfare":        [{"note": "G5", "ms": 150, "level": 0.42}, {"wait": 40}, {"note": "B5", "ms": 150, "level": 0.42}, {"wait": 40}, {"note": "D6", "ms": 150, "level": 0.44}, {"wait": 40}, {"note": "A5", "ms": 300, "level": 0.44}],
+        "level":          [{"tap": 0.8}, {"hz": 150, "ms": 45, "level": 0.8, "shape": "bell"}],
+        "prompt":         [{"tap": 0.4}, {"hz": 150, "ms": 45, "level": 0.4, "shape": "bell"}]
       }
     }
     """
@@ -53,6 +185,7 @@ struct Theme: Codable {
 
 /// Every cue cueback knows, and the Claude Code event that triggers it.
 let cueEvents: [(cue: String, event: String)] = [
+    ("prompt", "UserPromptSubmit: you sent Claude a prompt (on in Warhorn only)"),
     ("permission", "PermissionRequest: Claude asks for permission"),
     ("waiting", "Notification (idle_prompt): Claude has been waiting for you for about a minute"),
     ("input", "Elicitation: an MCP server asks you for input"),
@@ -71,10 +204,30 @@ let cueEvents: [(cue: String, event: String)] = [
 ]
 
 func printCues() {
-    let theme = try? Theme.load(path: nil)
+    let theme = Theme.builtIn(Config.load().theme ?? "classic") ?? Theme.builtIn("classic")
     print("  cue             default  event")
     for (cue, event) in cueEvents {
         let on = theme?.enabled.contains(cue) == true ? "on " : "off"
         print("  " + cue.padding(toLength: 16, withPad: " ", startingAt: 0) + on + "      " + event)
     }
+}
+
+/// `cueback theme`: lists the themes, or switches to one (by id or number) and plays its `installed` cue.
+func runTheme(_ choice: String?) {
+    guard let choice else {
+        let current = Config.load().theme ?? "classic"
+        for (i, id) in Theme.builtInIDs.enumerated() {
+            guard let theme = Theme.builtIn(id) else { continue }
+            print("  \(id == current ? "▸" : " ") \(i + 1) · \(theme.name.padding(toLength: 8, withPad: " ", startingAt: 0)) \(theme.about ?? "")")
+        }
+        return
+    }
+    guard let id = Theme.builtInID(choice), let theme = Theme.builtIn(id) else {
+        fail("There's no theme called \"\(choice)\". See: cueback theme")
+    }
+    var config = Config.load()
+    config.theme = id
+    config.save()
+    if Socket.send("reload") { Socket.send("play installed") }
+    print("Theme: \(Theme.builtInIDs.firstIndex(of: id)! + 1) · \(theme.name)")
 }

@@ -43,8 +43,9 @@ private struct CueButton: Identifiable {
 private let tryableCues = [
     CueButton(id: "permission", title: "Permission"), CueButton(id: "waiting", title: "Waiting"),
     CueButton(id: "input", title: "Input"), CueButton(id: "done", title: "Done"),
-    CueButton(id: "error", title: "Error"), CueButton(id: "installed", title: "Installed"),
+    CueButton(id: "error", title: "Error"), CueButton(id: "prompt", title: "Prompt"),
     CueButton(id: "subagent-start", title: "Subagent start"), CueButton(id: "subagent-stop", title: "Subagent stop"),
+    CueButton(id: "installed", title: "Installed"), CueButton(id: "fanfare", title: "Fanfare"),
 ]
 
 private struct Panel: View {
@@ -53,6 +54,8 @@ private struct Panel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             header
+            Divider()
+            themeSection
             Divider()
             volumeSection
             Divider()
@@ -83,6 +86,20 @@ private struct Panel: View {
                 .toggleStyle(.switch)
                 .labelsHidden()
                 .controlSize(.small)
+        }
+    }
+
+    private var themeSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            SectionTitle("Theme")
+            Picker("Theme", selection: Binding(get: { engine.themeID }, set: { engine.setTheme($0) })) {
+                ForEach(engine.themeIDs, id: \.self) { id in
+                    Text(engine.themeTitle(id)).tag(id)
+                }
+            }
+            .pickerStyle(.menu)
+            .labelsHidden()
+            Text(engine.themeAbout(engine.themeID)).font(.caption2).foregroundStyle(.tertiary)
         }
     }
 

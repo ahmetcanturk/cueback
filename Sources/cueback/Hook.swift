@@ -3,6 +3,8 @@ import Foundation
 /// The cue for a Claude Code hook event (its JSON input), or nil when the event shouldn't make a sound.
 func cueName(for input: [String: Any]) -> String? {
     switch input["hook_event_name"] as? String {
+    case "UserPromptSubmit":
+        return "prompt"
     case "PermissionRequest":
         return "permission"
     case "Notification":
@@ -64,7 +66,7 @@ func runHook(dryRun: Bool) -> Never {
 
 /// The Claude Code events cueback listens to, with their matchers.
 let hookEvents: [(event: String, matcher: String?)] = [
-    ("PermissionRequest", nil), ("Notification", "idle_prompt"), ("Elicitation", nil), ("Stop", nil),
+    ("UserPromptSubmit", nil), ("PermissionRequest", nil), ("Notification", "idle_prompt"), ("Elicitation", nil), ("Stop", nil),
     ("StopFailure", nil), ("SubagentStart", nil), ("SubagentStop", nil), ("TaskCompleted", nil),
     ("PostToolUseFailure", nil), ("PreCompact", nil), ("SessionStart", "startup"), ("SessionEnd", nil),
 ]
