@@ -6,6 +6,9 @@ When Claude asks for permission, finishes, fails or has been waiting for you, th
 talks, with the Mac's sound off. There's no speaker in a trackpad: cueback drives its haptic motor, the trick
 [nospeaker](https://github.com/os6/nospeaker) uses to make it speak.
 
+**MUTE YOUR MAC. NO, REALLY, ALL THE WAY DOWN. THEN TRY IT.**
+*If it still makes a sound, it isn't broken. That's the trackpad.*
+
 <!-- The demo video goes here. -->
 
 It needs a MacBook with a Force Touch trackpad (2015 or later), macOS 13 or later and a recent Claude Code. So
