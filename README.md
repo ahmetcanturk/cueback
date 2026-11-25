@@ -32,7 +32,7 @@ from Claude's internal agents, and `PreToolUse`/`PostToolUse`, which fire dozens
 
 ## Themes
 
-A theme decides what every cue feels and sounds like. Four come with cueback:
+A theme decides what every cue feels and sounds like. Five come with cueback:
 
 - **1 · Classic**: firm taps and clear notes (the table above). A new install starts here.
 - **2 · Mochi**: calm and sweet. Slow, soft pulses you feel under your finger and quiet music-box notes that
@@ -41,9 +41,11 @@ A theme decides what every cue feels and sounds like. Four come with cueback:
   gruff worker who talks back through the trackpad when the work is finished: "Job's done!"
 - **4 · Blocky**: an homage to block-building games. A nasal "hrmm?" when you're needed, a fuse that hisses and
   goes off when the turn fails, digging, pops and tinkling orbs.
+- **5 · Owlpost**: an homage to stories about a school of wizards. An owl hoots when you're needed, celesta
+  notes ring, a quill scratches, and a British voice says a spell when the work is finished.
 
-Switch in the menu bar, or with `cueback theme 2` (`cueback theme` lists them). Warhorn and Blocky are sounds of
-their own: no game's audio or music is in them.
+Switch in the menu bar, or with `cueback theme 2` (`cueback theme` lists them). Warhorn, Blocky and Owlpost are
+sounds of their own: no game's or film's audio or music is in them.
 
 [THEMES.md](THEMES.md) has what each theme plays for each cue, and how to write a theme of your own.
 
@@ -88,9 +90,9 @@ One person reported their trackpad's click feel gone after running nospeaker
 (0xE00002BC) just before. cueback keeps the motor's work light: a tap is one command and a tone one per ~40 ms,
 commands never overlap, a cue is cut off at 1.2 s, 150 ms of quiet follows each one, at most 30 play in a
 minute, and the motor is never driven past its normal maximum. The daemon logs any command the motor refuses.
-Spoken lines (Warhorn's) and hums and hisses (Blocky's) are the exceptions to "a handful of commands": up to
-about seventy in under a second, one for each beat of the voice's pitch. They're kept short, and the motor
-has refused none of them.
+Spoken lines (Warhorn's and Owlpost's) and hums and hisses (Blocky's) are the exceptions to "a handful of
+commands": up to about seventy in under a second, one for each beat of the voice's pitch. They're kept short,
+and the motor has refused none of them.
 
 ## Roadmap
 

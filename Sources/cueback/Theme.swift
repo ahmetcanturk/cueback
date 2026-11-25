@@ -38,7 +38,7 @@ struct Theme: Codable {
     }
 
     /// The themes cueback comes with, numbered in this order.
-    static let builtInIDs = ["classic", "mochi", "warhorn", "blocky"]
+    static let builtInIDs = ["classic", "mochi", "warhorn", "blocky", "owlpost"]
 
     /// The theme a new install starts with.
     static let defaultID = "classic"
@@ -50,6 +50,7 @@ struct Theme: Codable {
         case "mochi": json = mochi
         case "warhorn": json = warhorn
         case "blocky": json = blocky
+        case "owlpost": json = owlpost
         default: return nil
         }
         return try? JSONDecoder().decode(Theme.self, from: Data(json.utf8))
@@ -83,7 +84,8 @@ struct Theme: Codable {
         let key = text.lowercased()
         let everything = all()
         if let n = Int(key), everything.indices.contains(n - 1) { return everything[n - 1].id }
-        let nicknames = ["klasik": "classic", "warcraft": "warhorn", "wc": "warhorn", "minecraft": "blocky", "mc": "blocky"]
+        let nicknames = ["klasik": "classic", "warcraft": "warhorn", "wc": "warhorn", "minecraft": "blocky", "mc": "blocky",
+                         "harrypotter": "owlpost", "potter": "owlpost", "hp": "owlpost", "hogwarts": "owlpost"]
         let id = nicknames[key] ?? key
         return everything.contains(where: { $0.id == id }) ? id : nil
     }
@@ -212,6 +214,40 @@ struct Theme: Codable {
         "fanfare":        [{"note": "G5", "ms": 150, "level": 0.42}, {"wait": 40}, {"note": "B5", "ms": 150, "level": 0.42}, {"wait": 40}, {"note": "D6", "ms": 150, "level": 0.44}, {"wait": 40}, {"note": "A5", "ms": 300, "level": 0.44}],
         "level":          [{"tap": 0.8}, {"hz": 150, "ms": 45, "level": 0.8, "shape": "bell"}],
         "prompt":         [{"tap": 0.4}, {"hz": 150, "ms": 45, "level": 0.4, "shape": "bell"}]
+      }
+    }
+    """
+
+    /// 5 · Owlpost: an homage to stories about a school of wizards, made of sounds of its own (no film's music or
+    /// audio). An owl hoots when you're needed (low, breathy tones around 400 Hz), glassy celesta notes ring an
+    /// octave above themselves, a quill scratches when you're asked for input, a spell fizzles out when the turn
+    /// fails, and a British voice says a short spell when the work is done and for the subagents. The lines are
+    /// said by macOS's own voice; no recording is used.
+    static let owlpost = """
+    {
+      "name": "Owlpost",
+      "about": "An owl's hoot, glassy celesta notes, a scratching quill and spoken spells.",
+      "volume": 50,
+      "subagentLevel": 0.7,
+      "soft": true,
+      "enabled": ["permission", "waiting", "input", "done", "error", "subagent-start", "subagent-stop"],
+      "cues": {
+        "permission":     [{"hz": 392, "ms": 170, "level": 0.75}, {"wait": 100}, {"hz": 392, "ms": 110, "level": 0.7}, {"wait": 50}, {"hz": 440, "ms": 240, "level": 0.8}, {"wait": 110}, {"note": "D6", "ms": 160, "level": 0.46, "ring": 2}],
+        "waiting":        [{"hz": 392, "ms": 260, "level": 0.6}, {"wait": 220}, {"hz": 349, "ms": 340, "level": 0.55}, {"wait": 100}, {"note": "A5", "ms": 180, "level": 0.4, "ring": 2}],
+        "input":          [{"hiss": [1500, 3200], "ms": 60, "level": 0.4}, {"wait": 50}, {"hiss": [1500, 3200], "ms": 90, "level": 0.4}, {"wait": 90}, {"note": "D6", "ms": 100, "level": 0.44, "ring": 2}, {"wait": 30}, {"note": "A6", "ms": 180, "level": 0.48, "ring": 2}],
+        "done":           [{"say": "Mischief managed.", "voice": "Daniel", "rate": 170, "level": 0.95}],
+        "error":          [{"glide": [1600, 400], "ms": 160, "level": 0.6}, {"wait": 40}, {"hiss": [900, 2400], "ms": 70, "level": 0.5}, {"wait": 50}, {"hiss": [700, 1800], "ms": 60, "level": 0.35}, {"wait": 70}, {"hz": 110, "ms": 140, "level": 0.8, "shape": "bell"}],
+        "subagent-start": [{"say": "Lumos!", "voice": "Daniel", "rate": 170, "level": 0.75}],
+        "subagent-stop":  [{"say": "Nox.", "voice": "Daniel", "rate": 170, "level": 0.75}],
+        "task-done":      [{"note": "A6", "ms": 70, "level": 0.42, "ring": 2}, {"wait": 40}, {"note": "E7", "ms": 110, "level": 0.44, "ring": 2}],
+        "tool-failed":    [{"hiss": [900, 2400], "ms": 60, "level": 0.35}],
+        "compact":        [{"hiss": [400, 1500], "ms": 90, "level": 0.45}, {"wait": 110}, {"hiss": [400, 1500], "ms": 90, "level": 0.36}, {"wait": 110}, {"hiss": [400, 1500], "ms": 90, "level": 0.28}],
+        "session-start":  [{"note": "A5", "ms": 110, "level": 0.4, "ring": 2}, {"wait": 40}, {"note": "C6", "ms": 110, "level": 0.42, "ring": 2}, {"wait": 40}, {"note": "E6", "ms": 110, "level": 0.44, "ring": 2}, {"wait": 40}, {"note": "A6", "ms": 220, "level": 0.46, "ring": 2}],
+        "session-end":    [{"note": "A6", "ms": 110, "level": 0.44, "ring": 2}, {"wait": 40}, {"note": "E6", "ms": 110, "level": 0.42, "ring": 2}, {"wait": 40}, {"note": "C6", "ms": 110, "level": 0.4, "ring": 2}, {"wait": 40}, {"note": "A5", "ms": 240, "level": 0.4, "ring": 2}],
+        "installed":      [{"hz": 392, "ms": 170, "level": 0.75}, {"wait": 100}, {"hz": 440, "ms": 220, "level": 0.8}, {"wait": 130}, {"note": "A5", "ms": 90, "level": 0.42, "ring": 2}, {"wait": 30}, {"note": "C6", "ms": 90, "level": 0.44, "ring": 2}, {"wait": 30}, {"note": "E6", "ms": 90, "level": 0.46, "ring": 2}, {"wait": 30}, {"note": "A6", "ms": 200, "level": 0.48, "ring": 2}],
+        "fanfare":        [{"note": "D6", "ms": 110, "level": 0.42, "ring": 2}, {"wait": 30}, {"note": "F6", "ms": 110, "level": 0.44, "ring": 2}, {"wait": 30}, {"note": "A6", "ms": 110, "level": 0.46, "ring": 2}, {"wait": 60}, {"glide": [900, 2600], "ms": 80, "level": 0.45}, {"wait": 40}, {"note": "D7", "ms": 260, "level": 0.5, "ring": 2}],
+        "level":          [{"tap": 0.8}, {"note": "A6", "ms": 90, "level": 0.6, "ring": 2}],
+        "prompt":         [{"glide": [700, 1900], "ms": 70, "level": 0.45}]
       }
     }
     """
