@@ -130,10 +130,10 @@ struct Theme: Codable {
       "enabled": ["permission", "waiting", "input", "done", "error", "subagent-start", "subagent-stop"],
       "cues": {
         "permission":     [{"hz": 110, "ms": 90, "level": 0.55}, {"wait": 170}, {"hz": 110, "ms": 90, "level": 0.6}, {"wait": 200}, {"note": "G5", "ms": 120, "level": 0.45}, {"wait": 30}, {"note": "C6", "ms": 180, "level": 0.5}],
-        "waiting":        [{"hz": 100, "ms": 90, "level": 0.3}, {"wait": 50}, {"hz": 100, "ms": 90, "level": 0.42}, {"wait": 50}, {"hz": 100, "ms": 90, "level": 0.42}, {"wait": 50}, {"hz": 100, "ms": 90, "level": 0.3}],
+        "waiting":        [{"hz": 100, "ms": 90, "level": 0.45}, {"wait": 50}, {"hz": 100, "ms": 90, "level": 0.6}, {"wait": 50}, {"hz": 100, "ms": 90, "level": 0.6}, {"wait": 50}, {"hz": 100, "ms": 90, "level": 0.45}, {"wait": 120}, {"note": "G5", "ms": 200, "level": 0.42}],
         "input":          [{"note": "A5", "ms": 120, "level": 0.42}, {"wait": 40}, {"note": "D6", "ms": 180, "level": 0.46}],
         "done":           [{"note": "E6", "ms": 150, "level": 0.46}, {"wait": 60}, {"note": "C6", "ms": 240, "level": 0.5}],
-        "error":          [{"hz": 330, "ms": 120, "level": 0.4}, {"wait": 50}, {"hz": 247, "ms": 200, "level": 0.38}],
+        "error":          [{"hz": 110, "ms": 90, "level": 0.6}, {"wait": 60}, {"note": "E5", "ms": 140, "level": 0.5, "shape": "bell"}, {"wait": 50}, {"note": "B4", "ms": 260, "level": 0.5, "shape": "bell"}],
         "subagent-start": [{"hz": 110, "ms": 90, "level": 0.45}, {"wait": 60}, {"note": "A5", "ms": 110, "level": 0.36}],
         "subagent-stop":  [{"note": "A5", "ms": 110, "level": 0.36}, {"wait": 60}, {"hz": 110, "ms": 90, "level": 0.42}],
         "task-done":      [{"note": "C6", "ms": 160, "level": 0.4}],

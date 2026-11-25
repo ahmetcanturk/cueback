@@ -21,10 +21,10 @@ said by macOS's own voice, lowered in pitch, and Blocky's sounds are synthesized
 |---|---|---|---|---|
 | you send a prompt | – | – | two quick grunts | – |
 | Claude asks for permission | three firm taps, rising | two soft knocks, then a rising question | a drum, then a horn rising a fifth | "hm… hrmm?" |
-| Claude has waited a minute for you | two soft taps | a slow purr | distant drums | a long, falling "hrmmm" |
+| Claude has waited a minute for you | two soft taps | a slow purr, then a bell note | distant drums | a long, falling "hrmmm" |
 | an MCP server asks for input | two rising taps | two rising bell notes | a short horn and a drum | a short, rising "huh?" |
 | Claude is finished | two rising notes | "ding, dong" | says "Job's done!" | three orb chimes, then a rising chime |
-| the turn fails | a tap, then a low buzz | a low "uh-oh" | a drum, then three falling tones | a fuse hisses, then a boom |
+| the turn fails | a tap, then a low buzz | a soft pulse, then two falling bell notes | a drum, then three falling tones | a fuse hisses, then a boom |
 | a tool call fails | – | – | – | a hurt "uh!" |
 | a subagent starts | one soft tick | a soft pulse, then a bell note | says "Zug zug." | three crunches of digging |
 | a subagent finishes | two soft ticks | a bell note, then a soft pulse | says "Work complete." | a crunch and a pop |
