@@ -36,6 +36,7 @@ cueback · haptic cues for Claude Code, played on your Mac's trackpad
       --subagent         as if it came from inside a subagent (quieter)
   cueback demo           a Claude Code session in fifteen seconds, on the trackpad
   cueback theme [n]      list the themes, or switch to one by name or number
+  cueback check file     read a theme file and say what's in it, and what looks wrong
   cueback off | on       silence the cues from Claude Code, or bring them back
   cueback status         on or off, and whether the daemon is running
   cueback cues           list the cues and the events that trigger them
@@ -77,6 +78,8 @@ case "demo":
     runDemo()
 case "theme":
     runTheme(args.first)
+case "check":
+    runCheck(args.first)
 case "cues":
     printCues()
 case "install-hooks":

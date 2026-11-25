@@ -2,7 +2,7 @@ import Foundation
 
 /// What the menu bar changes, kept in ~/Library/Application Support/cueback/config.json.
 struct Config: Codable, Equatable {
-    var theme: String?             // a built-in theme's id; nil: classic (or the daemon's --theme)
+    var theme: String?             // a built-in theme's id; nil: Theme.defaultID (or the daemon's --theme)
     var volume: Double?            // 0…100; nil: the theme's
     var quietHours = false
     var quietStart = 22 * 60       // minutes after midnight

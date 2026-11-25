@@ -22,7 +22,8 @@ codesign -s - -f "$out/cueback" 2>/dev/null
 swift build -c release >/dev/null
 
 cp scripts/setup.sh "$out/install.sh"
-cp skill/SKILL.md THIRD_PARTY_NOTICES.md "$out/"
+cp skill/SKILL.md THIRD_PARTY_NOTICES.md THEMES.md "$out/"
+mkdir -p "$out/examples" && cp examples/pebble.json "$out/examples/"
 cat > "$out/README.txt" <<'EOF'
 cueback · haptic cues for Claude Code, played on your Mac's trackpad
 

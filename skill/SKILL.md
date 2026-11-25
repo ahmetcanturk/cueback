@@ -18,6 +18,9 @@ error, Claude waiting for the user, subagents starting and stopping. Its program
 | hear one cue ("done'ı çal") | `~/.local/bin/cueback play <cue>`; `~/.local/bin/cueback cues` lists them |
 | restart it, or bring it back after Quit ("yeniden başlat") | `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/app.cueback.daemon.plist 2>/dev/null; launchctl kickstart -k gui/$(id -u)/app.cueback.daemon` |
 
+The user's own themes are JSON files in `~/Library/Application Support/cueback/themes/` (the file's name is the
+theme's name); `~/.local/bin/cueback check <file>` says what's in one and what looks wrong.
+
 `off` only silences the cues that come from Claude Code: the background service keeps running, and `play` and
 `demo` still work. The bell in the menu bar opens a panel with the same switch, the volume, quiet hours and a
 button for each cue; its Quit stops cueback until the next login or a restart. Confirm what you did in one short

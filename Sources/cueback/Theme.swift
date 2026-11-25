@@ -40,6 +40,9 @@ struct Theme: Codable {
     /// The themes cueback comes with, numbered in this order.
     static let builtInIDs = ["classic", "mochi", "warhorn", "blocky"]
 
+    /// The theme a new install starts with.
+    static let defaultID = "classic"
+
     static func builtIn(_ id: String) -> Theme? {
         let json: String
         switch id {
@@ -52,13 +55,37 @@ struct Theme: Codable {
         return try? JSONDecoder().decode(Theme.self, from: Data(json.utf8))
     }
 
+    /// Your own themes: every .json file in ~/Library/Application Support/cueback/themes, named by its file.
+    static var userDirectory: URL { Socket.directory.appendingPathComponent("themes", isDirectory: true) }
+
+    static func userThemes() -> [(id: String, theme: Theme)] {
+        let files = (try? FileManager.default.contentsOfDirectory(at: userDirectory, includingPropertiesForKeys: nil)) ?? []
+        var found: [(id: String, theme: Theme)] = []
+        for url in files.sorted(by: { $0.lastPathComponent < $1.lastPathComponent }) where url.pathExtension.lowercased() == "json" {
+            let id = url.deletingPathExtension().lastPathComponent.lowercased()
+            if builtInIDs.contains(id) || id == "custom" { continue }   // those names are taken
+            if let theme = try? load(path: url.path) { found.append((id, theme)) }
+        }
+        return found
+    }
+
+    /// Every theme, in the order they're numbered: the built-in ones, then your own.
+    static func all() -> [(id: String, theme: Theme)] {
+        var everything: [(id: String, theme: Theme)] = []
+        for id in builtInIDs {
+            if let theme = builtIn(id) { everything.append((id, theme)) }
+        }
+        return everything + userThemes()
+    }
+
     /// A theme's id from its id, its number ("2" is "mochi") or what people call it.
-    static func builtInID(_ text: String) -> String? {
+    static func id(matching text: String) -> String? {
         let key = text.lowercased()
-        if let n = Int(key), builtInIDs.indices.contains(n - 1) { return builtInIDs[n - 1] }
+        let everything = all()
+        if let n = Int(key), everything.indices.contains(n - 1) { return everything[n - 1].id }
         let nicknames = ["klasik": "classic", "warcraft": "warhorn", "wc": "warhorn", "minecraft": "blocky", "mc": "blocky"]
         let id = nicknames[key] ?? key
-        return builtInIDs.contains(id) ? id : nil
+        return everything.contains(where: { $0.id == id }) ? id : nil
     }
 
     /// 1 · Classic: firm taps and clear notes. The cues that need you are on, and so are the subagents' soft ticks.
@@ -190,9 +217,9 @@ struct Theme: Codable {
     """
 }
 
-/// Every cue cueback knows, and the Claude Code event that triggers it.
+/// Every cue cueback knows, and what triggers it.
 let cueEvents: [(cue: String, event: String)] = [
-    ("prompt", "UserPromptSubmit: you sent Claude a prompt (on in Warhorn only)"),
+    ("prompt", "UserPromptSubmit: you sent Claude a prompt"),
     ("permission", "PermissionRequest: Claude asks for permission"),
     ("waiting", "Notification (idle_prompt): Claude has been waiting for you for about a minute"),
     ("input", "Elicitation: an MCP server asks you for input"),
@@ -205,36 +232,80 @@ let cueEvents: [(cue: String, event: String)] = [
     ("compact", "PreCompact: the conversation is about to be compacted"),
     ("session-start", "SessionStart (startup): a new session"),
     ("session-end", "SessionEnd: the session ended"),
-    ("installed", "plays once, when cueback is installed"),
+    ("installed", "when cueback is installed, and when you switch to the theme"),
     ("fanfare", "the end of `cueback demo`"),
     ("level", "one tap at the new volume, when you set it in the menu bar"),
 ]
 
+/// `cueback cues`: every cue, whether the theme in use plays it for Claude Code, and what triggers it.
 func printCues() {
-    let theme = Theme.builtIn(Config.load().theme ?? "classic") ?? Theme.builtIn("classic")
-    print("  cue             default  event")
+    let wanted = Config.load().theme ?? Theme.defaultID
+    let theme = Theme.all().first(where: { $0.id == wanted })?.theme ?? Theme.builtIn(Theme.defaultID)
+    print("  the theme in use: \(theme?.name ?? "?")")
+    print("  cue             plays  event")
     for (cue, event) in cueEvents {
-        let on = theme?.enabled.contains(cue) == true ? "on " : "off"
-        print("  " + cue.padding(toLength: 16, withPad: " ", startingAt: 0) + on + "      " + event)
+        let plays = theme?.enabled.contains(cue) == true ? "yes" : "no "
+        print("  " + cue.padding(toLength: 16, withPad: " ", startingAt: 0) + plays + "    " + event)
     }
 }
 
-/// `cueback theme`: lists the themes, or switches to one (by id or number) and plays its `installed` cue.
+/// `cueback theme`: lists the themes, or switches to one (by name or number) and plays its `installed` cue.
 func runTheme(_ choice: String?) {
+    let everything = Theme.all()
     guard let choice else {
-        let current = Config.load().theme ?? "classic"
-        for (i, id) in Theme.builtInIDs.enumerated() {
-            guard let theme = Theme.builtIn(id) else { continue }
-            print("  \(id == current ? "▸" : " ") \(i + 1) · \(theme.name.padding(toLength: 8, withPad: " ", startingAt: 0)) \(theme.about ?? "")")
+        let current = Config.load().theme ?? Theme.defaultID
+        for (i, entry) in everything.enumerated() {
+            let name = entry.theme.name.padding(toLength: 8, withPad: " ", startingAt: 0)
+            print("  \(entry.id == current ? "▸" : " ") \(i + 1) · \(name) \(entry.theme.about ?? "")")
         }
         return
     }
-    guard let id = Theme.builtInID(choice), let theme = Theme.builtIn(id) else {
+    guard let id = Theme.id(matching: choice), let index = everything.firstIndex(where: { $0.id == id }) else {
         fail("There's no theme called \"\(choice)\". See: cueback theme")
     }
     var config = Config.load()
     config.theme = id
     config.save()
     if Socket.send("reload") { Socket.send("play installed") }
-    print("Theme: \(Theme.builtInIDs.firstIndex(of: id)! + 1) · \(theme.name)")
+    print("Theme: \(index + 1) · \(everything[index].theme.name)")
+}
+
+/// `cueback check <file>`: reads a theme file and says what's in it, and what looks wrong.
+func runCheck(_ path: String?) {
+    guard let path else { fail("Which theme file? Like: cueback check my-theme.json") }
+    let theme: Theme
+    do { theme = try Theme.load(path: path) } catch { fail("cueback can't read that as a theme: \(error)") }
+    print("\(theme.name)" + (theme.about.map { " · " + $0 } ?? ""))
+    let known = cueEvents.map { $0.cue }
+    var problems: [String] = []
+    for cue in known {
+        guard let steps = theme.cues[cue] else { continue }
+        var ms = 0.0, voiced = false, empty = 0
+        for step in steps {
+            if step.say != nil { voiced = true; ms += 700 }   // a short line is about this long
+            else if step.hum != nil { voiced = true; ms += step.ms ?? 300 }
+            else if step.hiss != nil { voiced = true; ms += step.ms ?? 200 }
+            else if step.glide != nil { ms += step.ms ?? 60 }
+            else if step.tap != nil { ms += Motor.tapSeconds * 1000 }
+            else if step.hz != nil || step.note != nil { ms += step.ms ?? 120 }
+            else if let wait = step.wait { ms += wait }
+            else { empty += 1 }
+        }
+        let plays = theme.enabled.contains(cue) ? "plays" : "off  "
+        print("  \(plays)  " + cue.padding(toLength: 16, withPad: " ", startingAt: 0) + "\(steps.count) step\(steps.count == 1 ? "" : "s"), about \(Int(ms)) ms")
+        if ms > Limits.maxCueSeconds * 1000 { problems.append("\(cue) is longer than \(Int(Limits.maxCueSeconds * 1000)) ms, so its end is cut off") }
+        if voiced && theme.enabled.contains(cue) { problems.append("\(cue) hums, hisses or speaks: about a hundred motor commands a second, so keep it for a cue that's rare") }
+        if empty > 0 { problems.append("\(cue) has \(empty) step\(empty == 1 ? "" : "s") with nothing in \(empty == 1 ? "it" : "them") that cueback knows") }
+        for step in steps {
+            if let note = step.note, frequency(ofNote: note) == nil { problems.append("\(cue): \"\(note)\" isn't a note (write it like A6 or C#5)") }
+        }
+    }
+    for cue in theme.cues.keys.sorted() where !known.contains(cue) {
+        problems.append("\(cue): cueback has no cue by this name, so nothing plays it")
+    }
+    for cue in theme.enabled where theme.cues[cue] == nil {
+        problems.append("\(cue) is in \"enabled\" but has no steps")
+    }
+    print(problems.isEmpty ? "\nNothing looks wrong." : "\nWorth a look:")
+    for problem in problems { print("  - " + problem) }
 }

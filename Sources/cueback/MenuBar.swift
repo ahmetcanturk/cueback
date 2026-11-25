@@ -67,7 +67,10 @@ private struct Panel: View {
         }
         .padding(16)
         .frame(width: 300)
-        .onAppear { engine.refresh() }
+        .onAppear {
+            engine.refresh()
+            engine.rescanThemes()
+        }
     }
 
     private var stateColor: Color {

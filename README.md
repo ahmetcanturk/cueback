@@ -10,7 +10,7 @@ the sound off. There's no speaker in the trackpad: cueback drives its haptic mot
 
 ## Cues
 
-| cue | Claude Code event | default | feel |
+| cue | Claude Code event | default | feel in Classic |
 |---|---|---|---|
 | `prompt` | UserPromptSubmit | off (on in Warhorn) | one light tap |
 | `permission` | PermissionRequest | on | three firm taps, rising |
@@ -20,7 +20,7 @@ the sound off. There's no speaker in the trackpad: cueback drives its haptic mot
 | `error` | StopFailure | on | a tap, then a low buzz |
 | `subagent-start` · `subagent-stop` | SubagentStart · SubagentStop | on | one soft tick · two soft ticks |
 | `task-done` | TaskCompleted | off | one short high note |
-| `tool-failed` | PostToolUseFailure | off | a faint tick |
+| `tool-failed` | PostToolUseFailure | off (on in Blocky) | a faint tick |
 | `compact` | PreCompact | off | three soft rising notes |
 | `session-start` · `session-end` | SessionStart (startup) · SessionEnd | off | two notes up · down |
 
@@ -32,21 +32,20 @@ from Claude's internal agents, and `PreToolUse`/`PostToolUse`, which fire dozens
 
 ## Themes
 
-- **1 · Classic**: firm taps and clear notes (the table above).
+A theme decides what every cue feels and sounds like. Four come with cueback:
+
+- **1 · Classic**: firm taps and clear notes (the table above). A new install starts here.
 - **2 · Mochi**: calm and sweet. Slow, soft pulses you feel under your finger and quiet music-box notes that
-  ring and fade, at gentler strengths: two soft knocks and a little rising question when Claude asks, a slow
-  purr while it waits, a "ding, dong" when it's done, a low "uh-oh" when something fails.
+  ring and fade, at gentler strengths.
+- **3 · Warhorn**: heavy and slow, an homage to orc-and-human strategy games. War drums, a horn call, and a
+  gruff worker who talks back through the trackpad when the work is finished: "Job's done!"
+- **4 · Blocky**: an homage to block-building games. A nasal "hrmm?" when you're needed, a fuse that hisses and
+  goes off when the turn fails, digging, pops and tinkling orbs.
 
-- **3 · Warhorn**: heavy and slow, an homage to orc-and-human strategy games. Deep war drums, a horn that
-  swells up a fifth when you're needed, two quick wordless grunts when you send a prompt, and a gruff worker
-  who talks back through the trackpad when the work is finished: "Job's done!" The voice is macOS's own,
-  lowered in pitch.
-- **4 · Blocky**: an homage to block-building games. A nasal, questioning "hrmm?" when you're needed, a fuse
-  that hisses and goes off when the turn fails, a short hurt "uh!" when a tool call fails, tinkling orbs when
-  the work is done, three crunches of digging when a subagent starts, and a crunch and a pop when it finishes.
+Switch in the menu bar, or with `cueback theme 2` (`cueback theme` lists them). Warhorn and Blocky are sounds of
+their own: no game's audio or music is in them.
 
-Warhorn and Blocky are patterns of their own: no game's sounds or music are in them. Switch in the menu bar, or
-with `cueback theme 2` (`cueback theme` lists them). Every theme keeps to the same limits.
+[THEMES.md](THEMES.md) has what each theme plays for each cue, and how to write a theme of your own.
 
 ## How it works
 
@@ -56,12 +55,12 @@ readable only by you; a LaunchAgent starts it at login and brings it back if it 
 fails and never makes Claude wait.
 
 The daemon also puts a bell in the menu bar (`--headless` leaves it out). Its panel turns the cues on and off,
-sets the volume (one tap plays at the new level when you let go), sets quiet hours, when the cues from Claude
-Code stay silent, plays any cue or the demo, and shows the last cue. Quit stops cueback until the next login. The
-panel's settings are kept in `~/Library/Application Support/cueback/config.json`.
+picks the theme, sets the volume (one tap plays at the new level when you let go), sets quiet hours, when the
+cues from Claude Code stay silent, plays any cue or the demo, and shows the last cue. Quit stops cueback until
+the next login. The panel's settings are kept in `~/Library/Application Support/cueback/config.json`.
 
-A theme is a JSON file of cues, each a list of steps: `{"tap": 0.6}`, `{"note": "A6", "ms": 120, "level": 0.8}`,
-`{"hz": 165, "ms": 200}` or `{"wait": 100}`. The default theme is in [Theme.swift](Sources/cueback/Theme.swift).
+A theme is a JSON file of cues, each a list of steps: a tap, a note, a pause, a hum, a spoken line. Your own
+themes go in `~/Library/Application Support/cueback/themes/`; see [THEMES.md](THEMES.md).
 
 ## Install
 
@@ -70,6 +69,7 @@ scripts/install.sh                       # builds and installs: the program, the
 scripts/package.sh                       # dist/cueback.zip, to give to someone: unzip, run install.sh
 ~/.local/bin/cueback demo                # a Claude Code session in fifteen seconds
 ~/.local/bin/cueback play permission     # any cue, even one that's off; --subagent plays it quieter
+~/.local/bin/cueback theme               # the themes; `cueback theme 2` switches
 ~/.local/bin/cueback off                 # silence the cues from Claude Code; `on` brings them back
 ```
 
@@ -94,13 +94,12 @@ has refused none of them.
 
 ## Roadmap
 
-- A theme picker in the menu bar
 - Permission nudges that grow stronger while a request waits
-- Original themes, including an RTS-style one (no copied game sounds)
+- A theme editor in the menu bar
 - Signed and notarized builds
 
 ## Credits
 
-Motor access and the tap are adapted from nospeaker (MIT, Cody Collier); see
+Motor access and the speech analysis are adapted from nospeaker (MIT, Cody Collier); see
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). MultitouchSupport is a private macOS framework, so a macOS
 update can break this.

@@ -10,61 +10,81 @@ struct LastCue: Equatable {
 /// what the menu bar shows. Requests come from any thread; the published state changes on the main thread.
 final class Engine: ObservableObject {
     private let player: Player
-    private let themes: [String: Theme]
-    let themeIDs: [String]
+    private let custom: Theme?
     private let defaultThemeID: String
     private let cliVolume: Double?
     private let lock = NSLock()
-    private var settings: Config        // the copy the socket thread reads, under `lock`
+    private var themes: [String: Theme]     // under `lock`
+    private var settings: Config            // under `lock`: the copy the socket thread reads
     private var showsUI = false
 
+    @Published private(set) var themeIDs: [String]
     @Published private(set) var isOn = !Switch.isOff
     @Published private(set) var config: Config
-    @Published var volume: Double       // the slider; saved when it's let go
+    @Published var volume: Double           // the slider; saved when it's let go
     @Published private(set) var lastCue: LastCue?
     @Published private(set) var demoPlaying = false
 
     /// `custom` is a theme from the daemon's --theme; it's used until another one is picked.
     init(player: Player, custom: Theme?, cliVolume: Double?) {
-        var themes: [String: Theme] = [:]
-        var ids: [String] = []
-        for id in Theme.builtInIDs {
-            if let theme = Theme.builtIn(id) {
-                themes[id] = theme
-                ids.append(id)
-            } else {
-                logLine("the theme \"\(id)\" couldn't be read and is left out")
-            }
-        }
-        if let custom { themes["custom"] = custom; ids.append("custom") }
-        let defaultID = custom != nil ? "custom" : "classic"
+        let (themes, ids) = Engine.loadThemes(custom: custom)
+        let defaultID = custom != nil ? "custom" : Theme.defaultID
         let config = Config.load()
         let theme = themes[config.theme ?? defaultID] ?? themes[defaultID]
         self.player = player
-        self.themes = themes
-        self.themeIDs = ids
+        self.custom = custom
         self.defaultThemeID = defaultID
         self.cliVolume = cliVolume
+        self.themes = themes
         self.settings = config
+        self.themeIDs = ids
         self.config = config
         self.volume = config.volume ?? cliVolume ?? theme?.volume ?? 100
         if let theme { player.prepare(theme) }
     }
 
+    /// The built-in themes, then your own from the themes folder, then the daemon's --theme.
+    private static func loadThemes(custom: Theme?) -> ([String: Theme], [String]) {
+        var themes: [String: Theme] = [:]
+        var ids: [String] = []
+        for id in Theme.builtInIDs where Theme.builtIn(id) == nil {
+            logLine("the theme \"\(id)\" couldn't be read and is left out")
+        }
+        for (id, theme) in Theme.all() {
+            themes[id] = theme
+            ids.append(id)
+        }
+        if let custom {
+            themes["custom"] = custom
+            ids.append("custom")
+        }
+        return (themes, ids)
+    }
+
+    private func themeNamed(_ id: String) -> Theme? {
+        lock.lock()
+        defer { lock.unlock() }
+        return themes[id]
+    }
+
+    /// The theme a config asks for, or the default one when it names a theme that isn't there.
     private func theme(for config: Config) -> Theme {
-        themes[config.theme ?? defaultThemeID] ?? themes[defaultThemeID] ?? themes.values.first!
+        lock.lock()
+        defer { lock.unlock() }
+        return themes[config.theme ?? defaultThemeID] ?? themes[defaultThemeID] ?? themes[Theme.defaultID] ?? themes.values.first!
     }
 
     /// The theme in use, from any thread.
     func activeTheme() -> Theme {
         lock.lock()
-        defer { lock.unlock() }
+        let settings = self.settings
+        lock.unlock()
         return theme(for: settings)
     }
 
     /// Plays a request: "[play] [sub] <cue>". "play" is a preview, which plays even when cueback is off, in quiet
     /// hours or for a cue the theme leaves off; "sub" comes from inside a subagent and plays quieter. "reload"
-    /// rereads the settings (after `cueback theme`). Returns why a cue was skipped, or nil.
+    /// rereads the settings and the themes (after `cueback theme`). Returns why a cue was skipped, or nil.
     @discardableResult
     func handle(_ message: String) -> String? {
         if message == "reload" { reload(); return nil }
@@ -94,15 +114,19 @@ final class Engine: ObservableObject {
 
     private func reload() {
         let fresh = Config.load()
+        let (themes, ids) = Engine.loadThemes(custom: custom)
         lock.lock()
         settings = fresh
+        self.themes = themes
         lock.unlock()
-        logLine("settings reloaded · theme \(theme(for: fresh).name)")
-        player.prepare(theme(for: fresh))
+        let theme = self.theme(for: fresh)
+        logLine("settings reloaded · theme \(theme.name)")
+        player.prepare(theme)
         guard showsUI else { return }
         DispatchQueue.main.async {
+            self.themeIDs = ids
             self.config = fresh
-            self.volume = fresh.volume ?? self.cliVolume ?? self.theme(for: fresh).volume ?? 100
+            self.volume = fresh.volume ?? self.cliVolume ?? theme.volume ?? 100
         }
     }
 
@@ -118,6 +142,15 @@ final class Engine: ObservableObject {
     func refresh() {
         isOn = !Switch.isOff
         objectWillChange.send()
+    }
+
+    /// Looks in the themes folder again, so a theme you just put there shows up in the panel.
+    func rescanThemes() {
+        let (themes, ids) = Engine.loadThemes(custom: custom)
+        lock.lock()
+        self.themes = themes
+        lock.unlock()
+        if ids != themeIDs { themeIDs = ids }
     }
 
     func setOn(_ on: Bool) {
@@ -136,21 +169,25 @@ final class Engine: ObservableObject {
         lock.unlock()
     }
 
-    var themeID: String { themes[config.theme ?? ""] != nil ? config.theme! : defaultThemeID }
-
-    func themeTitle(_ id: String) -> String {
-        "\((themeIDs.firstIndex(of: id) ?? 0) + 1) · \(themes[id]?.name ?? id)"
+    var themeID: String {
+        if let id = config.theme, themeNamed(id) != nil { return id }
+        return defaultThemeID
     }
 
-    func themeAbout(_ id: String) -> String { themes[id]?.about ?? "" }
+    func themeTitle(_ id: String) -> String {
+        "\((themeIDs.firstIndex(of: id) ?? 0) + 1) · \(themeNamed(id)?.name ?? id)"
+    }
+
+    func themeAbout(_ id: String) -> String { themeNamed(id)?.about ?? "" }
 
     /// Switches the theme and plays its `installed` cue, so you feel what you picked.
     func setTheme(_ id: String) {
-        guard themes[id] != nil, id != themeID else { return }
+        guard themeNamed(id) != nil, id != themeID else { return }
         updateConfig { $0.theme = id }
-        volume = config.volume ?? cliVolume ?? theme(for: config).volume ?? 100
-        logLine("theme \(theme(for: config).name)")
-        player.prepare(theme(for: config))
+        let theme = self.theme(for: config)
+        volume = config.volume ?? cliVolume ?? theme.volume ?? 100
+        logLine("theme \(theme.name)")
+        player.prepare(theme)
         preview("installed")
     }
 

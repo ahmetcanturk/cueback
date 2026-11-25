@@ -1,0 +1,13 @@
+{
+  "name": "Pebble",
+  "about": "Two taps and a chime.",
+  "volume": 50,
+  "enabled": ["permission", "done", "error"],
+  "cues": {
+    "permission": [{"tap": 0.6}, {"wait": 120}, {"tap": 0.9}],
+    "done":       [{"note": "E6", "ms": 90}, {"wait": 20}, {"note": "A6", "ms": 170, "shape": "bell"}],
+    "error":      [{"tap": 0.8}, {"wait": 140}, {"hz": 165, "ms": 200}],
+    "installed":  [{"tap": 0.5}, {"wait": 120}, {"note": "A6", "ms": 200, "shape": "bell"}],
+    "level":      [{"tap": 0.9}]
+  }
+}
