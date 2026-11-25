@@ -33,8 +33,9 @@ Install: open Terminal in this folder and run   sh install.sh
          (or tell Claude: "run install.sh in this folder")
 You'll feel the "installed" cue. Then tell Claude: "cueback demo çalıştır" (run the cueback demo).
 
-A bell in the menu bar opens its panel: turn the cues on or off, set the volume and quiet hours, try each cue,
-play the demo. Its Quit stops cueback until your next login.
+A bell in the menu bar opens its panel: turn the cues on or off, pick a theme (1 Classic, 2 Mochi, 3 Warhorn,
+4 Blocky), set the volume and quiet hours, try each cue, play the demo. Its Quit stops cueback until your next
+login. You can also tell Claude "tema 2" to switch themes.
 
 Turn it off or on: tell Claude "cueback'i kapat" / "cueback'i aç", or run ~/.local/bin/cueback off / on.
 Remove it: tell Claude "cueback'i kaldır".

@@ -41,8 +41,9 @@ from Claude's internal agents, and `PreToolUse`/`PostToolUse`, which fire dozens
   swells up a fifth when you're needed, two quick wordless grunts when you send a prompt, and a gruff worker
   who talks back through the trackpad when the work is finished: "Job's done!" The voice is macOS's own,
   lowered in pitch.
-- **4 · Blocky**: an homage to block-building games. A wooden thunk for a block set down, a pop for something
-  picked up, tinkling orbs when the work is done, sparse calm notes while it waits.
+- **4 · Blocky**: an homage to block-building games. A nasal, questioning "hrmm?" when you're needed, a fuse
+  that hisses and goes off when the turn fails, a short hurt "uh!" when a tool call fails, tinkling orbs when
+  the work is done, three crunches of digging when a subagent starts, and a crunch and a pop when it finishes.
 
 Warhorn and Blocky are patterns of their own: no game's sounds or music are in them. Switch in the menu bar, or
 with `cueback theme 2` (`cueback theme` lists them). Every theme keeps to the same limits.
@@ -87,8 +88,9 @@ One person reported their trackpad's click feel gone after running nospeaker
 (0xE00002BC) just before. cueback keeps the motor's work light: a tap is one command and a tone one per ~40 ms,
 commands never overlap, a cue is cut off at 1.2 s, 150 ms of quiet follows each one, at most 30 play in a
 minute, and the motor is never driven past its normal maximum. The daemon logs any command the motor refuses.
-Spoken lines (Warhorn's) are the one exception to "a handful of commands": about sixty in under a second, one
-for each beat of the voice's pitch. They're kept short, and the motor has refused none of them.
+Spoken lines (Warhorn's) and hums and hisses (Blocky's) are the exceptions to "a handful of commands": up to
+about seventy in under a second, one for each beat of the voice's pitch. They're kept short, and the motor
+has refused none of them.
 
 ## Roadmap
 

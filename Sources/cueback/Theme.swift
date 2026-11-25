@@ -14,6 +14,12 @@ struct Step: Codable {
     var rate: Double?
     var pitch: Double?    // scales the voice's pitch (under 1: deeper)
     var formants: Double? // scales its resonances (under 1: a bigger voice)
+    var ring: Double?     // a tone's glassy second tone, as a multiple of its pitch (2 is an octave up)
+    var hum: [Double]?    // a voice-like "hmm" whose pitch moves through these (Hz) over `ms`
+    var mouth: [Double]?  // the hum's two resonances (Hz): closed and nasal by default; [520, 950] is an open "uh"
+    var hiss: [Double]?   // noise between these two frequencies for `ms`: a hiss up high, a crunch down low
+    var rise: Bool?       // a hiss that grows
+    var glide: [Double]?  // a tone that slides from the first pitch to the second over `ms`: a pop
 }
 
 /// A set of cues. Only the ones named in `enabled` play for Claude Code's events; any of them plays as a preview.
@@ -150,31 +156,32 @@ struct Theme: Codable {
     }
     """
 
-    /// 4 · Blocky: an homage to block-building games, again with patterns of its own. A wooden thunk for a block
-    /// set down, a rising pop for something picked up, tinkling orbs when the work is done, a low "hrm?" when
-    /// you're needed, and sparse calm notes while it waits.
+    /// 4 · Blocky: an homage to block-building games, made of synthesized sounds of its own (no game's audio). A
+    /// nasal, questioning "hrmm?" when you're needed, a fuse that hisses and goes off when something fails,
+    /// tinkling orbs and a rising chime when the work is done, three crunches of digging when a subagent
+    /// starts, a crunch and a pop when it's finished, and a short hurt "uh!" when a tool call fails.
     static let blocky = """
     {
       "name": "Blocky",
-      "about": "Wooden thunks, pops and tinkling orbs, with sparse calm notes.",
+      "about": "A humming hrmm, a hissing fuse, digging, pops and tinkling orbs.",
       "volume": 50,
       "subagentLevel": 0.7,
       "soft": true,
-      "enabled": ["permission", "waiting", "input", "done", "error", "subagent-start", "subagent-stop"],
+      "enabled": ["permission", "waiting", "input", "done", "error", "tool-failed", "subagent-start", "subagent-stop"],
       "cues": {
-        "permission":     [{"tap": 0.55}, {"hz": 150, "ms": 45, "level": 0.55, "shape": "bell"}, {"wait": 140}, {"tap": 0.55}, {"hz": 150, "ms": 45, "level": 0.55, "shape": "bell"}, {"wait": 200}, {"hz": 294, "ms": 130, "level": 0.5}, {"hz": 370, "ms": 170, "level": 0.56}],
-        "waiting":        [{"note": "E6", "ms": 220, "level": 0.42}, {"wait": 340}, {"note": "G6", "ms": 280, "level": 0.42}],
-        "input":          [{"hz": 330, "ms": 130, "level": 0.5}, {"hz": 277, "ms": 130, "level": 0.5}, {"wait": 60}, {"hz": 349, "ms": 180, "level": 0.56}],
-        "done":           [{"note": "G6", "ms": 60, "level": 0.42}, {"wait": 40}, {"note": "C7", "ms": 60, "level": 0.44}, {"wait": 40}, {"note": "E7", "ms": 60, "level": 0.46}, {"wait": 40}, {"note": "G7", "ms": 160, "level": 0.5}],
-        "error":          [{"tap": 0.8}, {"hz": 180, "ms": 80, "level": 0.6, "shape": "bell"}, {"wait": 50}, {"hz": 520, "ms": 40, "level": 0.45, "shape": "plain"}, {"hz": 330, "ms": 100, "level": 0.42, "shape": "bell"}],
-        "subagent-start": [{"tap": 0.5}, {"hz": 150, "ms": 45, "level": 0.5, "shape": "bell"}],
-        "subagent-stop":  [{"hz": 700, "ms": 30, "level": 0.4, "shape": "plain"}, {"hz": 1400, "ms": 45, "level": 0.45, "shape": "bell"}],
-        "task-done":      [{"note": "E7", "ms": 80, "level": 0.42}],
-        "tool-failed":    [{"tap": 0.4}, {"hz": 130, "ms": 45, "level": 0.4, "shape": "bell"}],
+        "permission":     [{"hum": [125, 112], "ms": 180, "level": 0.6}, {"wait": 110}, {"hum": [112, 104, 150], "ms": 380, "level": 0.7}],
+        "waiting":        [{"hum": [120, 104, 100], "ms": 520, "level": 0.5}],
+        "input":          [{"hum": [110, 160], "ms": 260, "level": 0.65}],
+        "done":           [{"note": "A6", "ms": 70, "level": 0.42, "ring": 2}, {"wait": 60}, {"note": "F#6", "ms": 70, "level": 0.42, "ring": 2}, {"wait": 50}, {"note": "B6", "ms": 70, "level": 0.44, "ring": 2}, {"wait": 120}, {"note": "C6", "ms": 60, "level": 0.4}, {"note": "E6", "ms": 60, "level": 0.42}, {"note": "G6", "ms": 60, "level": 0.44}, {"note": "C7", "ms": 200, "level": 0.5}],
+        "error":          [{"hiss": [2600, 4000], "ms": 520, "level": 0.5, "rise": true}, {"wait": 40}, {"tap": 1.0}, {"hz": 90, "ms": 180, "level": 1.0, "shape": "bell"}],
+        "subagent-start": [{"hiss": [250, 800], "ms": 40, "level": 0.65}, {"wait": 150}, {"hiss": [250, 800], "ms": 40, "level": 0.65}, {"wait": 150}, {"hiss": [250, 800], "ms": 40, "level": 0.65}],
+        "subagent-stop":  [{"hiss": [250, 800], "ms": 50, "level": 0.7}, {"wait": 90}, {"glide": [520, 1700], "ms": 60, "level": 0.5}],
+        "task-done":      [{"note": "A6", "ms": 80, "level": 0.42, "ring": 2}],
+        "tool-failed":    [{"hum": [185, 115], "ms": 170, "level": 0.85, "mouth": [520, 950]}, {"hiss": [1800, 3500], "ms": 50, "level": 0.22}],
         "compact":        [{"note": "E6", "ms": 160, "level": 0.36}, {"wait": 80}, {"note": "C6", "ms": 160, "level": 0.34}, {"wait": 80}, {"note": "A5", "ms": 260, "level": 0.32}],
-        "session-start":  [{"tap": 0.5}, {"hz": 150, "ms": 45, "level": 0.5, "shape": "bell"}, {"wait": 120}, {"hz": 700, "ms": 30, "level": 0.4, "shape": "plain"}, {"hz": 1400, "ms": 45, "level": 0.45, "shape": "bell"}, {"wait": 120}, {"note": "G6", "ms": 200, "level": 0.42}],
+        "session-start":  [{"tap": 0.5}, {"hz": 150, "ms": 45, "level": 0.5, "shape": "bell"}, {"wait": 120}, {"glide": [520, 1700], "ms": 60, "level": 0.5}, {"wait": 120}, {"note": "G6", "ms": 200, "level": 0.42}],
         "session-end":    [{"note": "G6", "ms": 160, "level": 0.4}, {"wait": 80}, {"note": "E6", "ms": 260, "level": 0.38}],
-        "installed":      [{"tap": 0.55}, {"hz": 150, "ms": 45, "level": 0.55, "shape": "bell"}, {"wait": 120}, {"tap": 0.55}, {"hz": 150, "ms": 45, "level": 0.55, "shape": "bell"}, {"wait": 140}, {"hz": 700, "ms": 30, "level": 0.4, "shape": "plain"}, {"hz": 1400, "ms": 45, "level": 0.45, "shape": "bell"}, {"wait": 120}, {"note": "G6", "ms": 60, "level": 0.42}, {"wait": 30}, {"note": "C7", "ms": 60, "level": 0.44}, {"wait": 30}, {"note": "E7", "ms": 60, "level": 0.46}, {"wait": 30}, {"note": "G7", "ms": 150, "level": 0.5}],
+        "installed":      [{"tap": 0.55}, {"hz": 150, "ms": 45, "level": 0.55, "shape": "bell"}, {"wait": 120}, {"tap": 0.55}, {"hz": 150, "ms": 45, "level": 0.55, "shape": "bell"}, {"wait": 140}, {"glide": [520, 1700], "ms": 60, "level": 0.5}, {"wait": 130}, {"note": "C6", "ms": 60, "level": 0.4}, {"note": "E6", "ms": 60, "level": 0.42}, {"note": "G6", "ms": 60, "level": 0.44}, {"note": "C7", "ms": 200, "level": 0.5}],
         "fanfare":        [{"note": "G5", "ms": 150, "level": 0.42}, {"wait": 40}, {"note": "B5", "ms": 150, "level": 0.42}, {"wait": 40}, {"note": "D6", "ms": 150, "level": 0.44}, {"wait": 40}, {"note": "A5", "ms": 300, "level": 0.44}],
         "level":          [{"tap": 0.8}, {"hz": 150, "ms": 45, "level": 0.8, "shape": "bell"}],
         "prompt":         [{"tap": 0.4}, {"hz": 150, "ms": 45, "level": 0.4, "shape": "bell"}]

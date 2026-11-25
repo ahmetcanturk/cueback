@@ -29,7 +29,12 @@ final class Engine: ObservableObject {
         var themes: [String: Theme] = [:]
         var ids: [String] = []
         for id in Theme.builtInIDs {
-            if let theme = Theme.builtIn(id) { themes[id] = theme; ids.append(id) }
+            if let theme = Theme.builtIn(id) {
+                themes[id] = theme
+                ids.append(id)
+            } else {
+                logLine("the theme \"\(id)\" couldn't be read and is left out")
+            }
         }
         if let custom { themes["custom"] = custom; ids.append("custom") }
         let defaultID = custom != nil ? "custom" : "classic"

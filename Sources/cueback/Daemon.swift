@@ -66,13 +66,28 @@ final class Player {
                                      formants: step.formants ?? 1, limit: left)
                     spoke = true
                 }
+            } else if let pitches = step.hum {
+                let seconds = min(max(0, step.ms ?? 300) / 1000, left)
+                motor.hum(pitches, seconds: seconds, level: min(1, max(0, step.level ?? 0.6)) * scale, mouth: step.mouth)
+                t += seconds
+                spoke = true
+            } else if let band = step.hiss, band.count == 2 {
+                let seconds = min(max(0, step.ms ?? 200) / 1000, left)
+                motor.hiss(low: band[0], high: band[1], seconds: seconds, level: min(1, max(0, step.level ?? 0.5)) * scale,
+                           rise: step.rise ?? false)
+                t += seconds
+                spoke = true
+            } else if let pitches = step.glide, pitches.count == 2 {
+                let seconds = min(max(0, step.ms ?? 60) / 1000, left)
+                motor.glide(from: pitches[0], to: pitches[1], seconds: seconds, level: min(1, max(0, step.level ?? 0.5)) * scale)
+                t += seconds
             } else if let strength = step.tap {
                 motor.tap(min(1, max(0, strength)) * scale)
                 t += Motor.tapSeconds
             } else if let hz = step.hz ?? step.note.flatMap(frequency(ofNote:)) {
                 let seconds = min(max(0, step.ms ?? 120) / 1000, left)
                 let shape = ToneShape(rawValue: step.shape ?? "") ?? (soft ? (hz < 500 ? .swell : .bell) : .plain)
-                motor.tone(hz, seconds: seconds, level: min(1, max(0, step.level ?? 0.8)) * scale, shape: shape)
+                motor.tone(hz, seconds: seconds, level: min(1, max(0, step.level ?? 0.8)) * scale, shape: shape, ring: step.ring)
                 t += seconds
             } else if let ms = step.wait {
                 t += min(max(0, ms) / 1000, left)
@@ -83,7 +98,7 @@ final class Player {
         if counts.failures > 0 {
             logLine("  the motor refused \(counts.failures) of \(counts.actuations) actuations (code \(counts.lastCode))")
         } else if spoke {
-            logLine("  spoke in \(counts.actuations) commands, none refused")
+            logLine("  voiced in \(counts.actuations) commands, none refused")
         }
         usleep(useconds_t(Limits.gapSeconds * 1e6))
     }

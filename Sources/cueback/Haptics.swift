@@ -157,8 +157,11 @@ final class Motor {
     /// A tone in commands of 30–40 ms, 80 Hz to 4 kHz (the motor's range), with its strength shaped over them:
     /// `plain` holds it, with the first and last a little softer so it starts and ends without a click; `bell`
     /// strikes and fades like a music box; `swell` rises and falls like a breath.
-    func tone(_ hz: Double, seconds: Double, level: Double, shape: ToneShape = .plain) {
+    /// With `ring`, a quieter second tone at that multiple of the pitch rings along, which makes a note glassy.
+    func tone(_ hz: Double, seconds: Double, level: Double, shape: ToneShape = .plain, ring: Double? = nil) {
         let f = min(4000, max(80, hz))
+        var tones: [(hz: Double, amp: Double)] = [(f, 1)]
+        if let ring, f * ring <= 4000 { tones.append((f * ring, 0.35)) }
         let pieces = max(1, Int((seconds / (shape == .plain ? 0.04 : 0.03)).rounded()))
         let length = seconds / Double(pieces)
         for i in 0..<pieces {
@@ -168,7 +171,57 @@ final class Motor {
             case .bell: weight = pow(0.7, Double(i))
             case .swell: weight = pieces < 3 ? 0.8 : sin(.pi * (Double(i) + 0.5) / Double(pieces))
             }
-            play([(f, 1)], ms: max(1, (length - Motor.guardSeconds) * 1000), level: level * weight)
+            play(tones, ms: max(1, (length - Motor.guardSeconds) * 1000), level: level * weight)
+        }
+    }
+
+    /// A hum with a voice's buzz: two resonances started again on every beat of a pitch that moves through
+    /// `pitches` (Hz), so it sounds like someone going "hmm". Like speech, about one command per beat. `mouth`
+    /// is the two resonances that give it a vowel: closed and nasal by default, or more open, like "uh".
+    func hum(_ pitches: [Double], seconds: Double, level: Double, mouth: [Double]? = nil) {
+        guard let first = pitches.first, seconds > 0 else { return }
+        var resonances: [(hz: Double, amp: Double)] = [(320, 1), (1100, 0.5)]   // a closed-mouth, nasal sound
+        if let mouth, mouth.count == 2 { resonances = [(min(4000, max(80, mouth[0])), 1), (min(4000, max(80, mouth[1])), 0.6)] }
+        let start = Clock.now()
+        var t = 0.0
+        while t < seconds {
+            var f0 = first
+            if pitches.count > 1 {
+                let position = t / seconds * Double(pitches.count - 1)
+                let i = min(pitches.count - 2, Int(position))
+                f0 = pitches[i] + (pitches[i + 1] - pitches[i]) * (position - Double(i))
+            }
+            let step = 1 / min(300, max(45, f0))
+            let fade = min(1, t / 0.03) * min(1, (seconds - t) / 0.06)   // a soft start and end
+            play(resonances, ms: (step - Motor.guardSeconds) * 1000, level: level * max(0.15, fade))
+            t += step
+            Clock.wait(until: Clock.after(t, from: start))
+        }
+    }
+
+    /// Noise: quick bursts of random tones between `low` and `high` Hz, for a hiss or a crunch. With `rise` it grows.
+    func hiss(low: Double, high: Double, seconds: Double, level: Double, rise: Bool) {
+        let lo = min(4000, max(80, min(low, high))), hi = min(4000, max(lo + 1, max(low, high)))
+        let step = 0.010
+        let start = Clock.now()
+        var t = 0.0
+        while t < seconds {
+            let tones: [(hz: Double, amp: Double)] = (0..<3).map { _ in (Double.random(in: lo...hi), 1.0) }
+            let growth = rise ? 0.25 + 0.75 * t / seconds : 1
+            play(tones, ms: (step - Motor.guardSeconds) * 1000, level: level * growth)
+            t += step
+            Clock.wait(until: Clock.after(t, from: start))
+        }
+    }
+
+    /// A tone that slides from one pitch to another in short pieces, fading a little as it goes: a pop or a drop.
+    func glide(from: Double, to: Double, seconds: Double, level: Double) {
+        let a = min(4000, max(80, from)), b = min(4000, max(80, to))
+        let pieces = max(2, Int((seconds / 0.014).rounded()))
+        let length = seconds / Double(pieces)
+        for i in 0..<pieces {
+            let x = Double(i) / Double(pieces - 1)
+            play([(a * pow(b / a, x), 1)], ms: max(1, (length - Motor.guardSeconds) * 1000), level: level * (1 - 0.45 * x))
         }
     }
 
