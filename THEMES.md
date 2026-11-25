@@ -135,12 +135,13 @@ A cue is a list of steps, played one after another. Each step is one of these:
 | a hum | `{"hum": [112, 104, 150], "ms": 380}` | A voice-like "hmm" whose pitch moves through the numbers, in Hz. Rising at the end, it sounds like a question. |
 | noise | `{"hiss": [2600, 4000], "ms": 520, "rise": true}` | Noise between two frequencies: a hiss up high, a crunch down low. With `"rise": true` it grows. |
 | a spoken line | `{"say": "Job's done!", "voice": "Ralph", "pitch": 0.75}` | A short line said by a macOS voice, through the trackpad. |
+| a sound file | `{"sound": "knock.wav"}` | An audio file of your own, played through the trackpad. |
 
 What else a step can carry:
 
 - **`ms`**: how long it lasts. Default 120 for a tone, 60 for a slide, 300 for a hum, 200 for noise.
 - **`level`**: its strength, 0 to 1. Default 0.8 for a tone, 0.6 for a hum, 0.5 for a slide and for noise, 0.9
-  for a spoken line.
+  for a spoken line, 0.8 for a sound file.
 - **`shape`** (tones): `"plain"` holds the tone, `"bell"` strikes and fades like a music box, `"swell"` rises
   and falls like a breath.
 - **`ring`** (tones): adds a quieter second tone at that multiple of the pitch, which makes a note glassy. `2`
@@ -151,6 +152,21 @@ What else a step can carry:
   minute, and two scales for the voice. `pitch` under 1 makes it deeper and `formants` under 1 makes it
   bigger. If the voice isn't installed, the system's voice says the line.
 
+### Sound files
+
+A `sound` step plays an audio file: WAV, AIFF, MP3, M4A or anything else macOS opens. Put the file in the
+themes folder next to your theme and write its name, or write a full path or one from your home folder
+(`"~/Music/knock.wav"`). A file in the themes folder always works; one in Documents, Downloads or the Desktop
+may not, because macOS keeps background programs out of those.
+
+The trackpad has no speaker, so the file isn't played back as it is. cueback skips any silence it starts with,
+cuts the next 1.2 seconds into 12 ms pieces and plays each piece's three strongest pitches. A voice, a melody
+or one clear sound (a bell, a knock, a whistle) comes through. Music with many instruments turns into a buzz.
+A file longer than the cue's limit fades out there.
+
+The file stays on your Mac: a theme names it, and cueback never copies it. If you share a theme, share only
+sound files you have the right to pass on.
+
 ### Limits
 
 cueback keeps the trackpad's motor from working hard, and a theme can't change that:
@@ -159,8 +175,8 @@ cueback keeps the trackpad's motor from working hard, and a theme can't change t
 - At most 30 cues play in a minute, and while one plays only one more can wait.
 - Nothing is stronger than the motor's normal maximum: `volume` and `level` only turn it down.
 
-Taps, tones and slides cost the motor a handful of commands. Hums, noise and spoken lines cost about a hundred a
-second, so keep them short and on cues that don't come often. The daemon writes any command the motor refuses to
+Taps, tones and slides cost the motor a handful of commands. Hums, noise, spoken lines and sound files cost
+about a hundred a second, so keep them short and on cues that don't come often. The daemon writes any command the motor refuses to
 `~/Library/Logs/cueback.log`. If you see one after trying a theme, make that cue shorter or simpler.
 
 The built-in themes are in [Sources/cueback/Theme.swift](Sources/cueback/Theme.swift), in the same format.

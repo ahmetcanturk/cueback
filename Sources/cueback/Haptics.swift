@@ -255,6 +255,26 @@ final class Motor {
         }
         return total
     }
+
+    /// Plays an analysed sound file (see Sound): each 12 ms frame is its strongest pitches, in one command. It
+    /// stops at `limit` seconds, fading out if the file goes on. Returns how long it played.
+    func sound(_ frames: [SoundFrame], level: Double, limit: Double) -> Double {
+        let whole = Double(frames.count) * Sound.hop
+        let total = min(whole, limit)
+        let start = Clock.now()
+        var t = 0.0, i = 0
+        while t < total, i < frames.count {
+            let frame = frames[i]
+            let fade = whole > limit ? min(1, (total - t) / 0.08) : 1
+            if frame.level > 0, !frame.tones.isEmpty {
+                play(frame.tones, ms: (Sound.hop - Motor.guardSeconds) * 1000, level: frame.level * level * fade)
+            }
+            i += 1
+            t += Sound.hop
+            Clock.wait(until: Clock.after(t, from: start))
+        }
+        return total
+    }
 }
 
 enum ToneShape: String {

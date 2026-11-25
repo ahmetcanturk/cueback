@@ -1,6 +1,7 @@
 import Foundation
 
-/// One step of a cue: a tap, a tone (by note name or Hz) or a pause.
+/// One step of a cue: a tap, a tone (by note name or Hz), a pause, a hum, noise, a slide, a spoken line or a
+/// sound file.
 struct Step: Codable {
     var tap: Double?      // a felt tap, strength 0…1
     var note: String?     // a tone by note name, like "A6"
@@ -20,6 +21,7 @@ struct Step: Codable {
     var hiss: [Double]?   // noise between these two frequencies for `ms`: a hiss up high, a crunch down low
     var rise: Bool?       // a hiss that grows
     var glide: [Double]?  // a tone that slides from the first pitch to the second over `ms`: a pop
+    var sound: String?    // an audio file, played through the trackpad: a full path, "~/…" or a name in the themes folder
 }
 
 /// A set of cues. Only the ones named in `enabled` play for Claude Code's events; any of them plays as a preview.
@@ -355,6 +357,16 @@ func runCheck(_ path: String?) {
         var ms = 0.0, voiced = false, empty = 0
         for step in steps {
             if step.say != nil { voiced = true; ms += 700 }   // a short line is about this long
+            else if let file = step.sound {
+                voiced = true
+                // In the themes folder, or still next to a theme file that hasn't been put there yet.
+                let beside = URL(fileURLWithPath: path).deletingLastPathComponent().appendingPathComponent(file)
+                if let seconds = Sound.seconds(of: Sound.url(for: file)) ?? Sound.seconds(of: beside) {
+                    ms += min(seconds, Limits.maxCueSeconds) * 1000
+                } else {
+                    problems.append("\(cue): the sound file \"\(file)\" isn't there or isn't audio (looked in \(Theme.userDirectory.path))")
+                }
+            }
             else if step.hum != nil { voiced = true; ms += step.ms ?? 300 }
             else if step.hiss != nil { voiced = true; ms += step.ms ?? 200 }
             else if step.glide != nil { ms += step.ms ?? 60 }
@@ -366,7 +378,7 @@ func runCheck(_ path: String?) {
         let plays = theme.enabled.contains(cue) ? "plays" : "off  "
         print("  \(plays)  " + cue.padding(toLength: 16, withPad: " ", startingAt: 0) + "\(steps.count) step\(steps.count == 1 ? "" : "s"), about \(Int(ms)) ms")
         if ms > Limits.maxCueSeconds * 1000 { problems.append("\(cue) is longer than \(Int(Limits.maxCueSeconds * 1000)) ms, so its end is cut off") }
-        if voiced && theme.enabled.contains(cue) { problems.append("\(cue) hums, hisses or speaks: about a hundred motor commands a second, so keep it for a cue that's rare") }
+        if voiced && theme.enabled.contains(cue) { problems.append("\(cue) hums, hisses, speaks or plays a file: about a hundred motor commands a second, so keep it for a cue that's rare") }
         if empty > 0 { problems.append("\(cue) has \(empty) step\(empty == 1 ? "" : "s") with nothing in \(empty == 1 ? "it" : "them") that cueback knows") }
         for step in steps {
             if let note = step.note, frequency(ofNote: note) == nil { problems.append("\(cue): \"\(note)\" isn't a note (write it like A6 or C#5)") }

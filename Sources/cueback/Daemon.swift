@@ -13,6 +13,7 @@ enum Limits {
 final class Player {
     private let motor: Motor
     private let speech = SpeechCache()
+    private let sounds = SoundCache()
     private let queue = DispatchQueue(label: "cueback.player", qos: .userInteractive)
     private let lock = NSLock()
     private var queued = 0
@@ -22,9 +23,10 @@ final class Player {
         self.motor = motor
     }
 
-    /// Gets a theme's spoken lines ready, so its first cue isn't late.
+    /// Gets a theme's spoken lines and sound files ready, so its first cue isn't late.
     func prepare(_ theme: Theme) {
         speech.prepare(theme)
+        sounds.prepare(theme)
     }
 
     /// Queues one of `theme`'s cues at `volume` (0…100): nil when it will play, or why it won't. A preview plays
@@ -64,6 +66,11 @@ final class Player {
                 if let frames = speech.frames(for: step) {
                     t += motor.speak(frames, level: min(1, max(0, step.level ?? 0.9)) * scale, pitch: step.pitch ?? 1,
                                      formants: step.formants ?? 1, limit: left)
+                    spoke = true
+                }
+            } else if let file = step.sound {
+                if let frames = sounds.frames(for: file) {
+                    t += motor.sound(frames, level: min(1, max(0, step.level ?? 0.8)) * scale, limit: left)
                     spoke = true
                 }
             } else if let pitches = step.hum {
